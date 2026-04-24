@@ -406,16 +406,25 @@ function signIn(){
     client_id: CONFIG.CLIENT_ID,
     scope: CONFIG.SCOPES,
     prompt: 'consent',
+    include_granted_scopes: false,
     callback: async (resp) => {
-      if(resp.error){ document.getElementById('auth-error').textContent='Sign in failed: '+resp.error; return; }
+      if(resp.error){ 
+        document.getElementById('auth-error').textContent='Sign in failed: '+resp.error; 
+        return; 
+      }
+      if(!resp.access_token){
+        document.getElementById('auth-error').textContent='No access token received';
+        return;
+      }
       accessToken = resp.access_token;
+      console.log('Token scopes:', resp.scope);
       await fetchUserProfile();
       document.getElementById('auth-screen').style.display='none';
       document.getElementById('main-app').style.display='block';
       await loadAll();
     }
   });
-  client.requestAccessToken();
+  client.requestAccessToken({prompt:'consent'});
 }
 
 async function fetchUserProfile(){
