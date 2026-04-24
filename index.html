@@ -50,46 +50,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .cal-cell:hover{background:#f9f9f7}
 .cal-cell:hover .cal-add-btn{opacity:1}
 .cal-add-btn{opacity:0;font-size:10px;color:#1a6bc4;background:none;border:none;cursor:pointer;padding:0;transition:opacity 0.1s}
-.cal-act-btn{opacity:0;font-size:10px;color:#888;background:none;border:1px solid #ddd;border-radius:4px;cursor:pointer;padding:1px 4px;transition:opacity 0.1s;margin-left:3px;line-height:1.4}
-.cal-cell:hover .cal-act-btn{opacity:1}
-.cal-act-btn:hover{background:#f0f0eb;border-color:#bbb;color:#555}
 .cal-cell.other-month{background:#fafafa}
 .cal-cell.other-month .cal-date{color:#ccc}
 .cal-cell.today{background:#EEF6FF}
 .cal-cell.today .cal-date{color:#1a6bc4;font-weight:700}
 .cal-date{font-size:12px;color:#999;margin-bottom:3px}
 .cal-chip{font-size:9px;border-radius:4px;padding:2px 5px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.4}
-.chip-meal{background:#1a5c2e;color:#ffffff}
+.chip-meal{background:#E8F0FE;color:#1a6bc4}
 .chip-hockey{background:#FFF3E0;color:#E65100}
 .chip-away{background:#FFEBEE;color:#C62828}
 .chip-note{background:#E8F5E9;color:#2E7D32}
-.chip-ron{background:#DBEAFE;color:#1e40af}
-.chip-angela{background:#D1FAE5;color:#065f46}
-.chip-ellen{background:#FEF3C7;color:#92400e}
-.chip-claire{background:#EDE9FE;color:#5b21b6}
-
-/* ACTIVITY OVERLAY */
-.act-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.25);z-index:300;display:none;align-items:flex-start;justify-content:center;padding-top:80px}
-.act-overlay.open{display:flex}
-.act-box{background:#fff;border-radius:14px;width:460px;max-width:95vw;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.15)}
-.act-header{padding:14px 16px 10px;border-bottom:1px solid #e8e8e4}
-.act-header h3{font-size:14px;font-weight:700;margin-bottom:10px}
-.act-existing{margin-bottom:8px;display:flex;flex-direction:column;gap:4px}
-.act-existing-row{display:flex;align-items:center;justify-content:space-between;padding:5px 8px;border-radius:8px;font-size:12px;font-weight:600}
-.act-existing-del{font-size:16px;cursor:pointer;opacity:0.6;padding-left:8px;line-height:1}
-.act-existing-del:hover{opacity:1}
-.act-quick{padding:12px 16px;border-bottom:1px solid #e8e8e4}
-.act-quick-label{font-size:10px;color:#888;text-transform:uppercase;letter-spacing:0.06em;font-weight:700;margin-bottom:8px}
-.act-quick-btns{display:flex;flex-wrap:wrap;gap:6px}
-.act-quick-btn{padding:5px 11px;border-radius:20px;border:none;cursor:pointer;font-size:12px;font-weight:600;transition:opacity 0.1s}
-.act-quick-btn:hover{opacity:0.8}
-.act-custom{padding:12px 16px;display:flex;gap:8px;align-items:center}
-.act-custom select{flex:0 0 auto;padding:7px 10px;border:1px solid #ddd;border-radius:8px;font-size:12px;background:#fff;color:#1a1a1a}
-.act-custom input{flex:1;padding:7px 10px;border:1px solid #ddd;border-radius:8px;font-size:12px;font-family:inherit}
-.act-custom input:focus{outline:none;border-color:#999}
-.act-custom-add{padding:7px 14px;background:#1a1a1a;border:none;border-radius:8px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap}
-.act-cancel{width:100%;padding:10px;background:none;border:none;border-top:1px solid #e8e8e4;cursor:pointer;font-size:12px;color:#888}
-.act-cancel:hover{background:#f5f5f0}
 
 /* Week view removed — using Google Calendar instead */
 
@@ -182,6 +152,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .spinner{width:24px;height:24px;border:2px solid #e8e8e4;border-top-color:#1a1a1a;border-radius:50%;animation:spin 0.7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 
+/* SUGGEST */
+.suggest-chip{padding:5px 12px;border-radius:20px;border:1px solid #ddd;background:#f5f5f0;color:#444;font-size:12px;cursor:pointer;transition:all 0.1s;white-space:nowrap}
+.suggest-chip:hover{background:#1a5c2e;color:#fff;border-color:#1a5c2e}
+.suggest-card{border:1px solid #e8e8e4;border-radius:12px;padding:12px 14px;margin-bottom:8px;background:#fff;transition:background 0.1s}
+.suggest-card:hover{background:#f9f9f7}
+.suggest-card-source{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px}
+.suggest-card-name{font-size:14px;font-weight:700;margin-bottom:3px}
+.suggest-card-desc{font-size:12px;color:#666;line-height:1.5;margin-bottom:6px}
+.suggest-card-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.suggest-card-badge{font-size:11px;padding:2px 8px;border-radius:10px;font-weight:600}
+.suggest-card-link{font-size:11px;color:#1a6bc4;text-decoration:none}
+.suggest-card-link:hover{text-decoration:underline}
+.suggest-add-btn{margin-left:auto;padding:4px 12px;background:#1a5c2e;color:#fff;border:none;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer}
+.suggest-add-btn:hover{background:#145224}
+
 /* TOAST */
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;padding:10px 20px;border-radius:10px;font-size:13px;font-weight:500;z-index:500;opacity:0;transition:opacity 0.2s;pointer-events:none}
 .toast.show{opacity:1}
@@ -215,6 +200,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
           <span id="sync-label">ready</span>
         </div>
         <button class="nav-btn" onclick="showScreen('list')">Meal List</button>
+        <button class="nav-btn" id="suggest-btn" onclick="openSuggest()" style="background:#1a5c2e;color:#fff;border-color:#1a5c2e">✨ Suggest</button>
         <a class="nav-btn" href="https://calendar.google.com" target="_blank" style="text-decoration:none">📅 Google Cal</a>
         <img class="user-avatar" id="user-avatar" src="" alt="User" onclick="signOut()" title="Sign out">
       </div>
@@ -229,7 +215,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
           <button onclick="changeMonth(1)">›</button>
         </div>
       </div>
-      <div style="padding:0 16px 8px;font-size:11px;color:#aaa">💡 <b>Click</b> a date to plan a meal &nbsp;·&nbsp; <b>Hover + click '＋ activity'</b> to add family schedules</div>
       <div class="cal-grid" id="cal-grid"></div>
     </div>
 
@@ -332,29 +317,40 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   </div>
 </div>
 
-<!-- ACTIVITY OVERLAY -->
-<div class="act-overlay" id="act-overlay" onclick="maybeCloseAct(event)">
-  <div class="act-box">
-    <div class="act-header">
-      <h3 id="act-date-label">Activities</h3>
-      <div class="act-existing" id="act-existing"></div>
+<!-- SUGGEST OVERLAY -->
+<div class="overlay" id="suggest-overlay" onclick="maybeCloseSuggest(event)">
+  <div class="panel" style="width:580px;max-height:88vh">
+    <button class="panel-close" onclick="closeSuggest()">×</button>
+    <div style="font-size:17px;font-weight:700;margin-bottom:4px">✨ Meal Suggestions</div>
+    <div style="font-size:12px;color:#888;margin-bottom:14px">Searches your meal list &amp; the internet for top-rated recipes</div>
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <input id="suggest-input" type="text" placeholder='What are you in the mood for? e.g. "salad", "quick chicken", "cozy soup"...'
+        style="flex:1;padding:10px 13px;border:1px solid #ddd;border-radius:10px;font-size:13px;font-family:inherit"
+        onkeydown="if(event.key==='Enter')runSuggest()">
+      <button onclick="runSuggest()" id="suggest-go-btn"
+        style="padding:10px 18px;background:#1a5c2e;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap">
+        Find meals
+      </button>
     </div>
-    <div class="act-quick">
-      <div class="act-quick-label">Quick add</div>
-      <div class="act-quick-btns" id="act-quick-btns"></div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px" id="suggest-chips">
+      <button class="suggest-chip" onclick="quickSuggest('salad')">🥗 Salad</button>
+      <button class="suggest-chip" onclick="quickSuggest('quick chicken')">🍗 Quick Chicken</button>
+      <button class="suggest-chip" onclick="quickSuggest('cozy soup')">🍲 Soup</button>
+      <button class="suggest-chip" onclick="quickSuggest('pasta')">🍝 Pasta</button>
+      <button class="suggest-chip" onclick="quickSuggest('fish')">🐟 Fish</button>
+      <button class="suggest-chip" onclick="quickSuggest('vegetarian')">🥦 Vegetarian</button>
+      <button class="suggest-chip" onclick="quickSuggest('30 minute meal')">⚡ 30 Min</button>
+      <button class="suggest-chip" onclick="quickSuggest('something I haven't made in a while')">🔄 Haven't Made</button>
     </div>
-    <div class="act-custom">
-      <select id="act-person">
-        <option value="Ron">Ron</option>
-        <option value="Angela">Angela</option>
-        <option value="Ellen">Ellen</option>
-        <option value="Claire">Claire</option>
-        <option value="Family">Family</option>
-      </select>
-      <input id="act-custom-input" type="text" placeholder="Custom activity...">
-      <button class="act-custom-add" onclick="addCustomActivity()">Add</button>
+    <div id="suggest-results" style="display:none">
+      <div style="border-top:1px solid #e8e8e4;padding-top:12px">
+        <div id="suggest-results-inner"></div>
+      </div>
     </div>
-    <button class="act-cancel" onclick="closeAct()">Done</button>
+    <div id="suggest-loading" style="display:none;text-align:center;padding:32px;color:#888">
+      <div style="font-size:24px;margin-bottom:10px">🤔</div>
+      <div style="font-size:13px" id="suggest-loading-text">Searching your cookbooks and the internet...</div>
+    </div>
   </div>
 </div>
 
@@ -504,12 +500,9 @@ async function sheetsUpdate(range, values){
   return r.json();
 }
 
-async function sheetsAppend(values, sheetName){
-  const sn=sheetName||CONFIG.SHEET_NAME;
-  // values can be a single row array or array of rows
-  const rows=Array.isArray(values[0])?values:[values];
-  const url=`https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/${encodeURIComponent(sn+'!A:Z')}:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`;
-  const r=await fetch(url,{method:'POST',headers:{Authorization:'Bearer '+accessToken,'Content-Type':'application/json'},body:JSON.stringify({values:rows})});
+async function sheetsAppend(values){
+  const url=`https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/${CONFIG.SHEET_NAME}!A:J:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`;
+  const r=await fetch(url,{method:'POST',headers:{Authorization:'Bearer '+accessToken,'Content-Type':'application/json'},body:JSON.stringify({values:[values]})});
   if(!r.ok) throw new Error('Sheets append failed: '+r.status);
   return r.json();
 }
@@ -615,7 +608,7 @@ async function removeCalendarEvent(dk, eventId){
 
 async function loadAll(){
   setSyncStatus('syncing');
-  await Promise.all([loadMeals(), loadCalendarEvents(), loadActivities()]);
+  await Promise.all([loadMeals(), loadCalendarEvents()]);
   setSyncStatus('synced');
   setTimeout(()=>setSyncStatus(''),3000);
   renderCalendar();
@@ -655,18 +648,7 @@ function makeCalCell(date,other){
   const dk=dateKey(date), isToday=dk===dateKey(TODAY);
   const cell=document.createElement('div');
   cell.className='cal-cell'+(other?' other-month':'')+(isToday?' today':'');
-
-  // Header row: date number + activity button
-  const headerRow=document.createElement('div');
-  headerRow.style.cssText='display:flex;align-items:center;justify-content:space-between;margin-bottom:3px';
-  const dateDiv=document.createElement('div');dateDiv.className='cal-date';dateDiv.style.margin='0';dateDiv.textContent=date.getDate();
-  const actBtn=document.createElement('button');
-  actBtn.className='cal-act-btn';actBtn.textContent='＋ activity';actBtn.title='Add family activity';
-  actBtn.onclick=(e)=>{e.stopPropagation();openAct(dk);};
-  headerRow.appendChild(dateDiv);headerRow.appendChild(actBtn);
-  cell.appendChild(headerRow);
-
-  // Day note chip
+  const dateDiv=document.createElement('div');dateDiv.className='cal-date';dateDiv.textContent=date.getDate();cell.appendChild(dateDiv);
   const note=dayNotes[dk]||'';
   if(note){
     const chip=document.createElement('div');
@@ -674,23 +656,13 @@ function makeCalCell(date,other){
     chip.className='cal-chip '+(nl.includes('hockey')?'chip-hockey':nl.includes('away')?'chip-away':'chip-note');
     chip.textContent=note; cell.appendChild(chip);
   }
-
-  // Meal chips
   (calEvents[dk]||[]).forEach(ev=>{
     const chip=document.createElement('div');chip.className='cal-chip chip-meal';chip.textContent=ev.title;cell.appendChild(chip);
   });
-
-  // Activity chips
-  (activities[dk]||[]).forEach(act=>{
-    const chip=document.createElement('div');
-    const p=act.person.toLowerCase();
-    chip.className='cal-chip chip-'+(['ron','angela','ellen','claire'].includes(p)?p:'note');
-    chip.textContent=act.person+': '+act.activity;
-    cell.appendChild(chip);
-  });
-
-  // Click cell = assign meal
-  cell.onclick=()=>openAssign(dk);
+  cell.onclick=()=>{ 
+    const dk2=dateKey(date);
+    openAssign(dk2);
+  };
   return cell;
 }
 
@@ -914,142 +886,183 @@ function maybeCloseNote(e){if(e.target===document.getElementById('note-overlay')
 document.getElementById('note-input').addEventListener('keydown',e=>{if(e.key==='Enter')saveNote();});
 
 
-// ── ACTIVITIES (Google Sheets tab) ───────────────────────────────────────────
-const ACT_SHEET = 'Activities';
-
-const QUICK_ACTS = [
-  {person:'Ron',    activity:'Hockey',  label:'Ron 🏒'},
-  {person:'Ron',    activity:'Away',    label:'Ron Away ✈️'},
-  {person:'Ron',    activity:'Travel',  label:'Ron Travel'},
-  {person:'Angela', activity:'Book Club',label:'Book Club 📚'},
-  {person:'Ellen',  activity:'Hockey',  label:'Ellen 🏒'},
-  {person:'Ellen',  activity:'Away',    label:'Ellen Away'},
-  {person:'Claire', activity:'Hockey',  label:'Claire 🏒'},
-  {person:'Claire', activity:'Away',    label:'Claire Away'},
-  {person:'Family', activity:'Dinner Out',label:'Dinner Out 🍽️'},
-];
-
-const PERSON_COLORS = {
-  ron:    {bg:'#DBEAFE',color:'#1e40af'},
-  angela: {bg:'#D1FAE5',color:'#065f46'},
-  ellen:  {bg:'#FEF3C7',color:'#92400e'},
-  claire: {bg:'#EDE9FE',color:'#5b21b6'},
-  family: {bg:'#F3F4F6',color:'#374151'},
+// ── MEAL SUGGESTER ────────────────────────────────────────────────────────────
+const COOKBOOK_LEGEND = {
+  'BB':     'Blue Binder (personal recipe collection)',
+  'D:ALS':  'Dinner: A Love Story (cookbook)',
+  'CL:5':   'Cooking Light: 5 Ingredient, 15 Minutes Cookbook',
+  'FN TLC': 'Food Network Turkey Lovers Cookbook',
+  'FG':     'Forking Good (cookbook)',
+  'KCC':    'KCC Cookbook',
+  'BB':     'Blue Binder',
 };
 
-async function loadActivities(){
-  activities={};
-  try{
-    const data=await sheetsGet(ACT_SHEET+'!A2:D500');
-    if(!data.values)return;
-    data.values.forEach((row,i)=>{
-      const [date,person,activity,note]=row;
-      if(!date||!person||!activity)return;
-      if(!activities[date])activities[date]=[];
-      activities[date].push({rowIndex:i+2,person,activity,note:note||''});
-    });
-  }catch(e){console.error('loadActivities',e);}
+function openSuggest(){
+  document.getElementById('suggest-overlay').classList.add('open');
+  document.getElementById('suggest-results').style.display='none';
+  document.getElementById('suggest-loading').style.display='none';
+  document.getElementById('suggest-input').value='';
+  setTimeout(()=>document.getElementById('suggest-input').focus(),80);
+}
+function closeSuggest(){document.getElementById('suggest-overlay').classList.remove('open');}
+function maybeCloseSuggest(e){if(e.target===document.getElementById('suggest-overlay'))closeSuggest();}
+function quickSuggest(q){document.getElementById('suggest-input').value=q;runSuggest();}
+
+function getMealsSummary(){
+  return meals.map(m=>{
+    const ratings=[];
+    if(m.Rating_R) ratings.push('Ron:'+m.Rating_R);
+    if(m.Rating_A) ratings.push('Angela:'+m.Rating_A);
+    if(m.Rating_E) ratings.push('Ellen:'+m.Rating_E);
+    if(m.Rating_C) ratings.push('Claire:'+m.Rating_C);
+    const lastMade=m.LastMade?'last made '+m.LastMade:'never made';
+    const src=m.Source?'['+m.Source+']':'';
+    return `- ${m.Name} ${src} | tags: ${m.Tags||'none'} | ratings: ${ratings.join(', ')||'unrated'} | ${lastMade}`;
+  }).join('\n');
 }
 
-async function saveActivity(dk, person, activity, note=''){
-  setSyncStatus('syncing');
-  try{
-    await sheetsAppend([[dk,person,activity,note]], ACT_SHEET);
-    if(!activities[dk])activities[dk]=[];
-    // Store with a temp rowIndex; reload will fix
-    activities[dk].push({rowIndex:-1,person,activity,note});
-    // Reload to get real row indices
-    await loadActivities();
-    setSyncStatus('synced');
-    setTimeout(()=>setSyncStatus(''),3000);
-    showToast('✅ '+person+' '+activity+' added!');
-  }catch(e){console.error('saveActivity',e);setSyncStatus('error');showToast('Error saving activity');}
-}
+async function runSuggest(){
+  const query=document.getElementById('suggest-input').value.trim();
+  if(!query){showToast('Tell me what you're in the mood for!');return;}
 
-async function deleteActivity(dk, rowIndex){
-  setSyncStatus('syncing');
-  try{
-    // Clear the row (Sheets API can't easily delete rows, so we blank it; a reload will skip blanks)
-    const url=`https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/${encodeURIComponent(ACT_SHEET+'!A'+rowIndex+':D'+rowIndex)}?valueInputOption=RAW`;
-    await fetch(url,{method:'PUT',headers:{Authorization:'Bearer '+accessToken,'Content-Type':'application/json'},body:JSON.stringify({values:[['','','','']]})});
-    await loadActivities();
-    setSyncStatus('synced');
-    setTimeout(()=>setSyncStatus(''),3000);
-    showToast('Activity removed');
-  }catch(e){console.error('deleteActivity',e);setSyncStatus('error');showToast('Error removing activity');}
-}
+  document.getElementById('suggest-results').style.display='none';
+  document.getElementById('suggest-loading').style.display='block';
+  const loadingTexts=[
+    'Searching your cookbooks...','Checking your meal history...','Scouring the internet for top-rated recipes...','Almost ready...'
+  ];
+  let li=0;
+  const loadingInterval=setInterval(()=>{
+    document.getElementById('suggest-loading-text').textContent=loadingTexts[Math.min(li++,loadingTexts.length-1)];
+  },1800);
 
-let actDateKey = null;
+  const btn=document.getElementById('suggest-go-btn');
+  btn.disabled=true;btn.textContent='Searching...';
 
-function openAct(dk){
-  actDateKey=dk;
-  const d=parseDate(dk);
-  document.getElementById('act-date-label').textContent=fmtDate(d)+' — Activities';
-  document.getElementById('act-custom-input').value='';
-  renderActOverlay();
-  document.getElementById('act-overlay').classList.add('open');
-}
+  const mealsSummary=getMealsSummary();
+  const recentlyMade=meals.filter(m=>m.LastMade).sort((a,b)=>b.LastMade.localeCompare(a.LastMade)).slice(0,10).map(m=>m.Name).join(', ');
 
-function renderActOverlay(){
-  const dk=actDateKey;
-  const existing=activities[dk]||[];
-  const existingDiv=document.getElementById('act-existing');
-  existingDiv.innerHTML='';
-  existing.forEach(act=>{
-    const p=act.person.toLowerCase();
-    const colors=PERSON_COLORS[p]||PERSON_COLORS.family;
-    const row=document.createElement('div');
-    row.className='act-existing-row';
-    row.style.cssText='background:'+colors.bg+';color:'+colors.color;
-    const label=document.createElement('span');
-    label.textContent=act.person+': '+act.activity+(act.note?' ('+act.note+')':'');
-    const del=document.createElement('span');
-    del.className='act-existing-del';del.textContent='×';del.title='Remove';
-    del.onclick=async()=>{
-      if(!confirm('Remove this activity?'))return;
-      await deleteActivity(dk,act.rowIndex);
-      renderActOverlay();
-      renderCalendar();
-    };
-    row.appendChild(label);row.appendChild(del);
-    existingDiv.appendChild(row);
-  });
+  const prompt=`You are a helpful family meal planner assistant. A family is looking for meal suggestions.
 
-  // Quick-add buttons — hide ones already on this day
-  const btns=document.getElementById('act-quick-btns');
-  btns.innerHTML='';
-  QUICK_ACTS.forEach(qa=>{
-    const alreadyAdded=existing.some(a=>a.person===qa.person&&a.activity===qa.activity);
-    const btn=document.createElement('button');
-    btn.className='act-quick-btn';
-    const p=qa.person.toLowerCase();
-    const colors=PERSON_COLORS[p]||PERSON_COLORS.family;
-    btn.style.cssText='background:'+colors.bg+';color:'+colors.color+(alreadyAdded?';opacity:0.35;cursor:default':'');
-    btn.textContent=qa.label;
-    if(!alreadyAdded){
-      btn.onclick=async()=>{
-        await saveActivity(actDateKey,qa.person,qa.activity);
-        renderActOverlay();
-        renderCalendar();
-      };
+Their request: "${query}"
+
+FAMILY MEAL LIST (meals they already own/know):
+${mealsSummary}
+
+COOKBOOK LEGEND:
+- BB = Blue Binder (personal handwritten recipe collection)
+- D:ALS = "Dinner: A Love Story" cookbook (page numbers listed)
+- CL:5 = Cooking Light: 5 Ingredient, 15 Minutes Cookbook
+- FN TLC = Food Network Turkey Lovers Cookbook
+- FG = Forking Good cookbook
+- KCC = KCC Cookbook
+- Online URLs = internet recipes they have bookmarked
+
+Recently made: ${recentlyMade}
+
+YOUR TASK: Suggest exactly 10 meal options in this JSON format. Mix sources:
+- At least 4-5 from their existing meal list above (prioritize ones not made recently, or never made)
+- At least 3-4 from the internet: only suggest real, well-known recipes that would realistically have 4.5-5 stars and 500+ ratings on sites like AllRecipes, Food Network, NYT Cooking, Smitten Kitchen, or similar
+
+Return ONLY valid JSON, no markdown, no explanation:
+{
+  "suggestions": [
+    {
+      "name": "Recipe name",
+      "source_type": "own_list" or "internet",
+      "source": "BB" or "D:ALS p.14" or "allrecipes.com" etc,
+      "description": "1-2 sentence enticing description",
+      "why": "1 sentence why this fits their request",
+      "url": null or "https://...",
+      "rating_note": null or "★★★★★ 4.8/5 (2,400+ ratings)" for internet recipes,
+      "tags": ["quick","chicken","etc"]
     }
-    btns.appendChild(btn);
+  ]
+}`;
+
+  try{
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',
+        max_tokens:3000,
+        tools:[{type:'web_search_20250305',name:'web_search'}],
+        messages:[{role:'user',content:prompt}]
+      })
+    });
+    clearInterval(loadingInterval);
+    const data=await resp.json();
+
+    // Extract text from response (may include tool_use blocks)
+    let text='';
+    for(const block of (data.content||[])){
+      if(block.type==='text') text+=block.text;
+    }
+
+    // Parse JSON from text
+    let suggestions=[];
+    const jsonMatch=text.match(/\{[\s\S]*"suggestions"[\s\S]*\}/);
+    if(jsonMatch){
+      const parsed=JSON.parse(jsonMatch[0]);
+      suggestions=parsed.suggestions||[];
+    }
+
+    renderSuggestions(suggestions, query);
+  }catch(err){
+    clearInterval(loadingInterval);
+    console.error('Suggest error:',err);
+    showToast('Something went wrong — try again');
+    document.getElementById('suggest-loading').style.display='none';
+  }finally{
+    btn.disabled=false;btn.textContent='Find meals';
+  }
+}
+
+function renderSuggestions(suggestions, query){
+  document.getElementById('suggest-loading').style.display='none';
+  const container=document.getElementById('suggest-results-inner');
+  container.innerHTML='';
+
+  if(!suggestions.length){
+    container.innerHTML='<div style="text-align:center;padding:24px;color:#888;font-size:13px">No suggestions found — try a different search!</div>';
+    document.getElementById('suggest-results').style.display='block';
+    return;
+  }
+
+  const header=document.createElement('div');
+  header.style.cssText='font-size:12px;color:#888;margin-bottom:10px';
+  const ownCount=suggestions.filter(s=>s.source_type==='own_list').length;
+  const webCount=suggestions.length-ownCount;
+  header.textContent=`${suggestions.length} suggestions for "${query}" — ${ownCount} from your cookbooks, ${webCount} from the internet`;
+  container.appendChild(header);
+
+  suggestions.forEach((s,i)=>{
+    const isOwn=s.source_type==='own_list';
+    const card=document.createElement('div');
+    card.className='suggest-card';
+
+    const sourceColor=isOwn?'#1a5c2e':'#1a4bc4';
+    const sourceBg=isOwn?'#E8F5E2':'#EEF3FF';
+    const sourceLabel=isOwn?('📗 '+s.source):'🌐 Internet';
+
+    card.innerHTML=`
+      <div class="suggest-card-source" style="color:${sourceColor}">${sourceLabel}</div>
+      <div class="suggest-card-name">${i+1}. ${s.name}</div>
+      <div class="suggest-card-desc">${s.description}</div>
+      <div style="font-size:11px;color:#888;font-style:italic;margin-bottom:6px">${s.why}</div>
+      <div class="suggest-card-meta">
+        ${s.rating_note?`<span class="suggest-card-badge" style="background:#FFF8E1;color:#F57F17">${s.rating_note}</span>`:''}
+        ${s.url?`<a class="suggest-card-link" href="${s.url}" target="_blank">View recipe →</a>`:''}
+        ${(s.tags||[]).map(t=>`<span style="font-size:10px;background:#f0f0eb;color:#666;padding:1px 6px;border-radius:8px">${t}</span>`).join('')}
+      </div>
+    `;
+    container.appendChild(card);
   });
-}
 
-async function addCustomActivity(){
-  const person=document.getElementById('act-person').value;
-  const activity=document.getElementById('act-custom-input').value.trim();
-  if(!activity){showToast('Enter an activity first');return;}
-  await saveActivity(actDateKey,person,activity);
-  document.getElementById('act-custom-input').value='';
-  renderActOverlay();
-  renderCalendar();
+  document.getElementById('suggest-results').style.display='block';
+  // Scroll results into view
+  container.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
-
-function closeAct(){document.getElementById('act-overlay').classList.remove('open');}
-function maybeCloseAct(e){if(e.target===document.getElementById('act-overlay'))closeAct();}
-document.getElementById('act-custom-input').addEventListener('keydown',e=>{if(e.key==='Enter')addCustomActivity();});
 
 // ── DEFAULT MEALS DATA ────────────────────────────────────────────────────────
 const DEFAULT_MEALS = [
