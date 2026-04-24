@@ -405,6 +405,7 @@ function signIn(){
   const client = google.accounts.oauth2.initTokenClient({
     client_id: CONFIG.CLIENT_ID,
     scope: CONFIG.SCOPES,
+    prompt: 'consent',
     callback: async (resp) => {
       if(resp.error){ document.getElementById('auth-error').textContent='Sign in failed: '+resp.error; return; }
       accessToken = resp.access_token;
