@@ -982,36 +982,58 @@ Return ONLY valid JSON, no markdown, no explanation:
   try{
     const resp=await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
-      headers:{'Content-Type':'application/json','anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      headers:{
+        'Content-Type':'application/json',
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
       body:JSON.stringify({
-        model:'claude-sonnet-4-20250514',
-        max_tokens:3000,
-        tools:[{type:'web_search_20250305',name:'web_search'}],
+        model:'claude-sonnet-4-6',
+        max_tokens:4000,
         messages:[{role:'user',content:prompt}]
       })
     });
     clearInterval(loadingInterval);
+
+    if(!resp.ok){
+      const errData=await resp.json().catch(()=>({}));
+      const errMsg=errData?.error?.message||('API error '+resp.status);
+      throw new Error(errMsg);
+    }
+
     const data=await resp.json();
 
-    // Extract text from response (may include tool_use blocks)
+    // Extract text content
     let text='';
     for(const block of (data.content||[])){
       if(block.type==='text') text+=block.text;
     }
 
-    // Parse JSON from text
+    // Parse JSON — handle markdown code fences if present
     let suggestions=[];
-    const jsonMatch=text.match(/\{[\s\S]*"suggestions"[\s\S]*\}/);
+    const clean=text.replace(/```json|```/g,'').trim();
+    // Try to find JSON object in the response
+    const jsonMatch=clean.match(/\{[\s\S]*"suggestions"[\s\S]*\}/);
     if(jsonMatch){
-      const parsed=JSON.parse(jsonMatch[0]);
-      suggestions=parsed.suggestions||[];
+      try{
+        const parsed=JSON.parse(jsonMatch[0]);
+        suggestions=parsed.suggestions||[];
+      }catch(parseErr){
+        console.error('JSON parse error:',parseErr,'Raw:',jsonMatch[0].slice(0,200));
+        throw new Error('Could not parse suggestions — try again');
+      }
+    } else {
+      console.error('No JSON found in response. Raw text:', text.slice(0,500));
+      throw new Error('Unexpected response format — try again');
     }
 
     renderSuggestions(suggestions, query);
   }catch(err){
     clearInterval(loadingInterval);
     console.error('Suggest error:',err);
-    showToast('Something went wrong — try again');
+    const errDiv=document.getElementById('suggest-results-inner');
+    errDiv.innerHTML=`<div style="text-align:center;padding:24px;color:#c62828;font-size:13px">⚠️ ${err.message}</div>`;
+    document.getElementById('suggest-results').style.display='block';
     document.getElementById('suggest-loading').style.display='none';
   }finally{
     btn.disabled=false;btn.textContent='Find meals';
