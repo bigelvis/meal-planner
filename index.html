@@ -282,6 +282,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 <!-- ASSIGN SEARCH -->
 <div class="search-overlay" id="search-overlay" onclick="maybeCloseSearch(event)">
   <div class="search-box">
+    <div id="search-existing" style="display:none;border-bottom:1px solid #e8e8e4;padding:8px 12px 6px"></div>
     <input id="search-input" placeholder='Search meals... "chili", "R:5", "hockey"' oninput="renderSearch()" autocomplete="off">
     <div class="search-results" id="search-results"></div>
     <button class="search-cancel" onclick="closeSearch()">Cancel</button>
@@ -756,9 +757,44 @@ function closeDetail(){document.getElementById('detail-overlay').classList.remov
 function openAssign(dk){
   assigningDateKey=dk;
   document.getElementById('search-input').value='';
+  // Show existing meals for this date with delete option
+  const existing=calEvents[dk]||[];
+  const existingDiv=document.getElementById('search-existing');
+  if(existing.length){
+    existingDiv.style.display='block';
+    existingDiv.innerHTML='';
+    const label=document.createElement('div');
+    label.style.cssText='font-size:10px;color:#888;text-transform:uppercase;letter-spacing:0.06em;font-weight:700;margin-bottom:6px';
+    label.textContent='On this day — click to remove';
+    existingDiv.appendChild(label);
+    existing.forEach(ev=>{
+      const row=document.createElement('div');
+      row.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:6px 8px;background:#FFF5F5;border:1px solid #ffcdd2;border-radius:8px;margin-bottom:4px;cursor:pointer';
+      row.title='Click to remove this meal from this day';
+      const name=document.createElement('span');
+      name.style.cssText='font-size:13px;font-weight:600;color:#333;flex:1';
+      name.textContent=ev.title;
+      const del=document.createElement('span');
+      del.style.cssText='font-size:18px;color:#c62828;padding-left:8px;line-height:1';
+      del.textContent='×';
+      row.appendChild(name);row.appendChild(del);
+      row.onclick=()=>removeMealFromDate(dk,ev.eventId,ev.title);
+      existingDiv.appendChild(row);
+    });
+  } else {
+    existingDiv.style.display='none';
+  }
   renderSearch();
   document.getElementById('search-overlay').classList.add('open');
   setTimeout(()=>document.getElementById('search-input').focus(),80);
+}
+
+async function removeMealFromDate(dk, eventId, title){
+  if(!confirm('Remove "'+title+'" from this day?'))return;
+  closeSearch();
+  await removeCalendarEvent(dk, eventId);
+  renderCalendar();
+  showToast('🗑️ Removed '+title+' from calendar');
 }
 
 function renderSearch(){
