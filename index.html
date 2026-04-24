@@ -48,6 +48,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .cal-dow{background:#f5f5f0;text-align:center;padding:7px 0;font-size:11px;color:#888;font-weight:700;letter-spacing:0.04em}
 .cal-cell{background:#fff;padding:6px;min-height:80px;cursor:pointer;transition:background 0.1s;overflow:hidden}
 .cal-cell:hover{background:#f9f9f7}
+.cal-cell:hover .cal-add-btn{opacity:1}
+.cal-add-btn{opacity:0;font-size:10px;color:#1a6bc4;background:none;border:none;cursor:pointer;padding:0;transition:opacity 0.1s}
 .cal-cell.other-month{background:#fafafa}
 .cal-cell.other-month .cal-date{color:#ccc}
 .cal-cell.today{background:#EEF6FF}
@@ -59,31 +61,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .chip-away{background:#FFEBEE;color:#C62828}
 .chip-note{background:#E8F5E9;color:#2E7D32}
 
-/* WEEK */
-.week-scroll-container{height:calc(100vh - 52px);overflow-y:auto}
-.week-day-row{display:grid;grid-template-columns:80px 1fr;border-bottom:1px solid #e8e8e4;min-height:90px}
-.week-day-row.today-row{background:#EEF6FF}
-.week-day-label{padding:12px 8px;border-right:1px solid #e8e8e4;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:2px;background:inherit}
-.week-day-name{font-size:11px;color:#888;font-weight:700;letter-spacing:0.04em}
-.week-day-num{font-size:22px;font-weight:700;color:#1a1a1a;line-height:1}
-.week-day-num.today-num{color:#1a6bc4}
-.week-month-label{font-size:10px;color:#bbb}
-.week-day-content{padding:10px 14px;display:flex;flex-direction:column;gap:6px;background:inherit}
-.week-tags{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
-.week-tag{font-size:10px;padding:2px 7px;border-radius:10px;font-weight:500}
-.tag-hockey{background:#FFF3E0;color:#E65100}
-.tag-away{background:#FFEBEE;color:#C62828}
-.tag-note{background:#E8F5E9;color:#2E7D32}
-.tag-generic{background:#f0f0eb;color:#666}
-.week-meals{display:flex;flex-direction:column;gap:4px}
-.week-meal-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.week-meal-name{font-size:13px;font-weight:600;color:#1a1a1a}
-.week-meal-empty{font-size:12px;color:#bbb;font-style:italic}
-.week-btn{font-size:11px;color:#888;background:none;border:1px dashed #ccc;border-radius:8px;padding:3px 9px;cursor:pointer}
-.week-btn:hover{background:#f5f5f0}
-.week-btn.danger{border-color:#ffcdd2;color:#c62828}
-.week-btn.danger:hover{background:#ffebee}
-.note-edit-btn{font-size:10px;color:#aaa;background:none;border:none;cursor:pointer;text-decoration:underline;padding:0 4px}
+/* Week view removed — using Google Calendar instead */
 
 /* MEAL LIST */
 .list-toolbar{padding:10px 16px;display:flex;gap:8px;align-items:center;border-bottom:1px solid #e8e8e4;flex-wrap:wrap;background:#fafafa;position:sticky;top:52px;z-index:50}
@@ -199,7 +177,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="topbar">
       <div class="topbar-left">
         <span class="topbar-title" id="topbar-title">Family Meal Planner</span>
-        <button class="nav-btn" id="back-btn" style="display:none" onclick="goBack()">← Back</button>
+        <button class="nav-btn" id="back-btn" style="display:none" onclick="goBack()">← Calendar</button>
       </div>
       <div class="topbar-right">
         <div class="sync-indicator">
@@ -207,6 +185,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
           <span id="sync-label">ready</span>
         </div>
         <button class="nav-btn" onclick="showScreen('list')">Meal List</button>
+        <a class="nav-btn" href="https://calendar.google.com" target="_blank" style="text-decoration:none">📅 Google Cal</a>
         <img class="user-avatar" id="user-avatar" src="" alt="User" onclick="signOut()" title="Sign out">
       </div>
     </div>
@@ -223,11 +202,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <div class="cal-grid" id="cal-grid"></div>
     </div>
 
-    <div class="screen" id="screen-week">
-      <div class="week-scroll-container" id="week-scroll">
-        <div id="week-rows"></div>
-      </div>
-    </div>
+  
 
     <div class="screen" id="screen-list">
       <div class="list-toolbar">
@@ -330,7 +305,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 <div class="toast" id="toast"></div>
 
 <!-- GOOGLE API -->
-<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://accounts.google.com/gsi/client" async defer onload="initAuth()"></script>
 <script>
 // ── CONFIG ────────────────────────────────────────────────────────────────────
 const CONFIG = {
@@ -365,7 +340,7 @@ let currentRatings   = {rR:'',rA:'',rE:'',rC:''};
 
 // ── UTILS ─────────────────────────────────────────────────────────────────────
 function dateKey(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
-function parseDate(s){ if(!s)return null; const p=s.split('-'); return new Date(+p[0],+p[1]-1,+p[2]); }
+function parseDate(s){ if(!s)return null; if(s.includes('/')){ const p=s.split('/'); const yr=p[2].length===2?2000+parseInt(p[2]):parseInt(p[2]); return new Date(yr,parseInt(p[0])-1,parseInt(p[1])); } const p=s.split('-'); return new Date(+p[0],+p[1]-1,+p[2]); }
 function addDays(d,n){ const r=new Date(d); r.setDate(r.getDate()+n); return r; }
 function daysBetween(a,b){ return Math.round((b-a)/86400000); }
 function fmtDate(d){ return DAYS[d.getDay()]+', '+MONTHS[d.getMonth()].slice(0,3)+' '+d.getDate(); }
@@ -401,12 +376,13 @@ function parseRatingFilter(q){
 }
 
 // ── AUTH ──────────────────────────────────────────────────────────────────────
-function signIn(){
-  const client = google.accounts.oauth2.initTokenClient({
+let tokenClient = null;
+
+function initAuth(){
+  tokenClient = google.accounts.oauth2.initTokenClient({
     client_id: CONFIG.CLIENT_ID,
     scope: CONFIG.SCOPES,
-    prompt: 'consent',
-    include_granted_scopes: false,
+    include_granted_scopes: true,
     callback: async (resp) => {
       if(resp.error){ 
         document.getElementById('auth-error').textContent='Sign in failed: '+resp.error; 
@@ -417,14 +393,24 @@ function signIn(){
         return;
       }
       accessToken = resp.access_token;
-      console.log('Token scopes:', resp.scope);
+      // Store hint for silent refresh
+      localStorage.setItem('mp_signed_in','1');
       await fetchUserProfile();
       document.getElementById('auth-screen').style.display='none';
       document.getElementById('main-app').style.display='block';
       await loadAll();
     }
   });
-  client.requestAccessToken({prompt:'consent'});
+  // Try silent sign-in if previously signed in
+  if(localStorage.getItem('mp_signed_in')==='1'){
+    tokenClient.requestAccessToken({prompt:''});
+  }
+}
+
+function signIn(){
+  if(tokenClient){
+    tokenClient.requestAccessToken({prompt:''});
+  }
 }
 
 async function fetchUserProfile(){
@@ -438,6 +424,8 @@ async function fetchUserProfile(){
 function signOut(){
   if(!confirm('Sign out?'))return;
   accessToken=null; userProfile=null; meals=[]; calEvents={};
+  localStorage.removeItem('mp_signed_in');
+  google.accounts.oauth2.revoke(accessToken, ()=>{});
   document.getElementById('main-app').style.display='none';
   document.getElementById('auth-screen').style.display='flex';
 }
@@ -579,14 +567,13 @@ function showScreen(s){
   document.querySelectorAll('.screen').forEach(el=>el.classList.remove('active'));
   document.getElementById('screen-'+s).classList.add('active');
   document.getElementById('back-btn').style.display=(s==='calendar')?'none':'';
-  const titles={calendar:'Family Meal Planner',week:'Week View',list:'Meal List'};
-  document.getElementById('topbar-title').textContent=titles[s];
+  const titles={calendar:'Family Meal Planner',list:'Meal List'};
+  document.getElementById('topbar-title').textContent=titles[s]||'Family Meal Planner';
   if(s==='calendar')renderCalendar();
-  else if(s==='week')renderWeek();
   else renderMealList();
 }
 
-function goBack(){ showScreen(prevScreen==='week'?'week':prevScreen==='list'?'list':'calendar'); }
+function goBack(){ showScreen('calendar'); }
 function goToToday(){ calYear=TODAY.getFullYear(); calMonth=TODAY.getMonth(); loadCalendarEvents().then(renderCalendar); }
 function changeMonth(d){ calMonth+=d; if(calMonth>11){calMonth=0;calYear++;} if(calMonth<0){calMonth=11;calYear--;} loadCalendarEvents().then(renderCalendar); }
 
@@ -619,94 +606,14 @@ function makeCalCell(date,other){
   (calEvents[dk]||[]).forEach(ev=>{
     const chip=document.createElement('div');chip.className='cal-chip chip-meal';chip.textContent=ev.title;cell.appendChild(chip);
   });
-  cell.onclick=()=>{ weekBaseDate=new Date(date); showScreen('week'); };
+  cell.onclick=()=>{ 
+    const dk2=dateKey(date);
+    openAssign(dk2);
+  };
   return cell;
 }
 
-// ── WEEK ──────────────────────────────────────────────────────────────────────
-function renderWeek(){
-  const container=document.getElementById('week-rows');
-  container.innerHTML='';
-  for(let i=-3;i<=10;i++) container.appendChild(makeWeekRow(addDays(weekBaseDate,i)));
-  const scroll=document.getElementById('week-scroll');
-  scroll.onscroll=()=>{
-    if(scroll.scrollTop<100){ prependDays(4); scroll.scrollTop+=4*90; }
-    if(scroll.scrollTop+scroll.clientHeight>scroll.scrollHeight-100) appendDays(4);
-  };
-  setTimeout(()=>{ scroll.scrollTop=3*90; },30);
-}
-
-function prependDays(n){
-  const c=document.getElementById('week-rows');
-  const first=new Date(c.firstChild.dataset.date);
-  for(let i=n;i>=1;i--) c.insertBefore(makeWeekRow(addDays(first,-i)),c.firstChild);
-}
-
-function appendDays(n){
-  const c=document.getElementById('week-rows');
-  const last=new Date(c.lastChild.dataset.date);
-  for(let i=1;i<=n;i++) c.appendChild(makeWeekRow(addDays(last,i)));
-}
-
-function makeWeekRow(date){
-  const dk=dateKey(date), isToday=dk===dateKey(TODAY);
-  const note=dayNotes[dk]||'';
-  const events=calEvents[dk]||[];
-  const row=document.createElement('div');
-  row.className='week-day-row'+(isToday?' today-row':'');
-  row.dataset.date=dk;
-
-  const label=document.createElement('div');label.className='week-day-label';
-  const dn=document.createElement('div');dn.className='week-day-name';dn.textContent=DAYS[date.getDay()];
-  const num=document.createElement('div');num.className='week-day-num'+(isToday?' today-num':'');num.textContent=date.getDate();
-  const mon=document.createElement('div');mon.className='week-month-label';mon.textContent=MONTHS[date.getMonth()].slice(0,3);
-  label.appendChild(dn);label.appendChild(num);label.appendChild(mon);
-
-  const content=document.createElement('div');content.className='week-day-content';
-
-  // Notes/tags row
-  if(note){
-    const tags=document.createElement('div');tags.className='week-tags';
-    note.split(',').forEach(t=>{
-      const tag=document.createElement('span');
-      const tv=t.trim().toLowerCase();
-      tag.className='week-tag '+(tv.includes('hockey')?'tag-hockey':tv.includes('away')?'tag-away':tv?'tag-note':'tag-generic');
-      tag.textContent=t.trim(); tags.appendChild(tag);
-    });
-    const eb=document.createElement('button');eb.className='note-edit-btn';eb.textContent='edit note';
-    eb.onclick=(e)=>{e.stopPropagation();openNote(dk,note);};
-    tags.appendChild(eb);
-    content.appendChild(tags);
-  } else {
-    const ab=document.createElement('button');ab.className='week-btn';ab.style.fontSize='10px';ab.style.padding='2px 7px';ab.textContent='+ add note';
-    ab.onclick=(e)=>{e.stopPropagation();openNote(dk,'');};
-    content.appendChild(ab);
-  }
-
-  // Meals
-  const mealsDiv=document.createElement('div');mealsDiv.className='week-meals';
-  if(events.length){
-    events.forEach(ev=>{
-      const mealRow=document.createElement('div');mealRow.className='week-meal-row';
-      const mn=document.createElement('span');mn.className='week-meal-name';mn.textContent=ev.title;
-      const clr=document.createElement('button');clr.className='week-btn danger';clr.textContent='remove';
-      clr.onclick=async()=>{ await removeCalendarEvent(dk,ev.eventId); renderWeek(); if(currentScreen==='calendar')renderCalendar(); };
-      mealRow.appendChild(mn);mealRow.appendChild(clr);
-      mealsDiv.appendChild(mealRow);
-    });
-  }
-  // Add meal button
-  const addRow=document.createElement('div');addRow.className='week-meal-row';
-  if(!events.length){const em=document.createElement('span');em.className='week-meal-empty';em.textContent='no meal planned';addRow.appendChild(em);}
-  const add=document.createElement('button');add.className='week-btn';add.textContent='+ assign meal';add.onclick=()=>openAssign(dk);
-  addRow.appendChild(add);
-  mealsDiv.appendChild(addRow);
-  content.appendChild(mealsDiv);
-
-  row.appendChild(label);row.appendChild(content);
-  return row;
-}
-
+// ── MEAL LIST (Week view removed — using Google Calendar) ──────────────────────────────────────────────
 // ── MEAL LIST ─────────────────────────────────────────────────────────────────
 function renderMealList(){
   const q=(document.getElementById('list-search').value||'').toLowerCase().trim();
