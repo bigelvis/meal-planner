@@ -923,7 +923,7 @@ function getMealsSummary(){
 
 async function runSuggest(){
   const query=document.getElementById('suggest-input').value.trim();
-  if(!query){showToast('Tell me what you're in the mood for!');return;}
+  if(!query){showToast("Tell me what you're in the mood for!");return;}
 
   document.getElementById('suggest-results').style.display='none';
   document.getElementById('suggest-loading').style.display='block';
