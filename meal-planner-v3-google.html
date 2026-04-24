@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Family Meal Planner</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f0;color:#1a1a1a;font-size:14px;min-height:100vh}
+.app{max-width:960px;margin:0 auto;background:#fff;min-height:100vh;box-shadow:0 0 0 1px rgba(0,0,0,0.08)}
+
+/* AUTH */
+.auth-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:20px;padding:32px}
+.auth-logo{font-size:32px}
+.auth-title{font-size:24px;font-weight:700}
+.auth-subtitle{font-size:14px;color:#888;text-align:center;max-width:320px;line-height:1.6}
+.auth-btn{padding:12px 28px;background:#1a1a1a;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:10px}
+.auth-btn:hover{background:#333}
+.auth-btn img{width:20px;height:20px}
+.auth-error{color:#c62828;font-size:13px;text-align:center}
+
+/* TOPBAR */
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #e8e8e4;position:sticky;top:0;background:#fff;z-index:100}
+.topbar-left{display:flex;align-items:center;gap:12px}
+.topbar-title{font-size:15px;font-weight:700}
+.nav-btn{font-size:12px;color:#666;background:none;border:1px solid #ddd;border-radius:8px;padding:5px 12px;cursor:pointer;transition:background 0.1s}
+.nav-btn:hover{background:#f5f5f0}
+.topbar-right{display:flex;align-items:center;gap:8px}
+.sync-indicator{font-size:11px;color:#888;display:flex;align-items:center;gap:4px}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:#ccc}
+.sync-dot.syncing{background:#F9A825;animation:pulse 1s infinite}
+.sync-dot.synced{background:#4CAF50}
+.sync-dot.error{background:#f44336}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.user-avatar{width:28px;height:28px;border-radius:50%;cursor:pointer;border:1px solid #ddd}
+
+/* SCREENS */
+.screen{display:none}
+.screen.active{display:block}
+
+/* CALENDAR */
+.cal-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px}
+.cal-month{font-size:17px;font-weight:700}
+.cal-nav{display:flex;gap:6px}
+.cal-nav button{background:none;border:1px solid #ddd;border-radius:8px;padding:5px 12px;cursor:pointer;font-size:14px;color:#666}
+.cal-nav button:hover{background:#f5f5f0}
+.cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:1px;background:#e8e8e4;border:1px solid #e8e8e4;border-radius:12px;overflow:hidden;margin:0 16px 16px}
+.cal-dow{background:#f5f5f0;text-align:center;padding:7px 0;font-size:11px;color:#888;font-weight:700;letter-spacing:0.04em}
+.cal-cell{background:#fff;padding:6px;min-height:80px;cursor:pointer;transition:background 0.1s;overflow:hidden}
+.cal-cell:hover{background:#f9f9f7}
+.cal-cell.other-month{background:#fafafa}
+.cal-cell.other-month .cal-date{color:#ccc}
+.cal-cell.today{background:#EEF6FF}
+.cal-cell.today .cal-date{color:#1a6bc4;font-weight:700}
+.cal-date{font-size:12px;color:#999;margin-bottom:3px}
+.cal-chip{font-size:9px;border-radius:4px;padding:2px 5px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.4}
+.chip-meal{background:#E8F0FE;color:#1a6bc4}
+.chip-hockey{background:#FFF3E0;color:#E65100}
+.chip-away{background:#FFEBEE;color:#C62828}
+.chip-note{background:#E8F5E9;color:#2E7D32}
+
+/* WEEK */
+.week-scroll-container{height:calc(100vh - 52px);overflow-y:auto}
+.week-day-row{display:grid;grid-template-columns:80px 1fr;border-bottom:1px solid #e8e8e4;min-height:90px}
+.week-day-row.today-row{background:#EEF6FF}
+.week-day-label{padding:12px 8px;border-right:1px solid #e8e8e4;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:2px;background:inherit}
+.week-day-name{font-size:11px;color:#888;font-weight:700;letter-spacing:0.04em}
+.week-day-num{font-size:22px;font-weight:700;color:#1a1a1a;line-height:1}
+.week-day-num.today-num{color:#1a6bc4}
+.week-month-label{font-size:10px;color:#bbb}
+.week-day-content{padding:10px 14px;display:flex;flex-direction:column;gap:6px;background:inherit}
+.week-tags{display:flex;gap:4px;flex-wrap:wrap;align-items:center}
+.week-tag{font-size:10px;padding:2px 7px;border-radius:10px;font-weight:500}
+.tag-hockey{background:#FFF3E0;color:#E65100}
+.tag-away{background:#FFEBEE;color:#C62828}
+.tag-note{background:#E8F5E9;color:#2E7D32}
+.tag-generic{background:#f0f0eb;color:#666}
+.week-meals{display:flex;flex-direction:column;gap:4px}
+.week-meal-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.week-meal-name{font-size:13px;font-weight:600;color:#1a1a1a}
+.week-meal-empty{font-size:12px;color:#bbb;font-style:italic}
+.week-btn{font-size:11px;color:#888;background:none;border:1px dashed #ccc;border-radius:8px;padding:3px 9px;cursor:pointer}
+.week-btn:hover{background:#f5f5f0}
+.week-btn.danger{border-color:#ffcdd2;color:#c62828}
+.week-btn.danger:hover{background:#ffebee}
+.note-edit-btn{font-size:10px;color:#aaa;background:none;border:none;cursor:pointer;text-decoration:underline;padding:0 4px}
+
+/* MEAL LIST */
+.list-toolbar{padding:10px 16px;display:flex;gap:8px;align-items:center;border-bottom:1px solid #e8e8e4;flex-wrap:wrap;background:#fafafa;position:sticky;top:52px;z-index:50}
+.list-search{flex:1;min-width:200px;padding:8px 12px;border:1px solid #ddd;border-radius:8px;background:#fff;color:#1a1a1a;font-size:13px}
+.list-search:focus{outline:none;border-color:#999}
+.list-sort{padding:8px 10px;border:1px solid #ddd;border-radius:8px;background:#fff;color:#1a1a1a;font-size:12px;cursor:pointer}
+.add-btn{padding:8px 14px;background:#1a1a1a;border:none;border-radius:8px;cursor:pointer;font-size:13px;color:#fff;white-space:nowrap;font-weight:600}
+.add-btn:hover{background:#333}
+.search-hint{width:100%;font-size:11px;color:#aaa}
+.meal-list-items{padding:8px 16px;display:flex;flex-direction:column;gap:4px}
+.meal-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border:1px solid #e8e8e4;border-radius:10px;cursor:pointer;transition:background 0.1s;background:#fff}
+.meal-item:hover{background:#f9f9f7}
+.meal-item.cooldown{opacity:0.55}
+.meal-left{flex:1;min-width:0}
+.meal-name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.meal-meta{display:flex;align-items:center;gap:6px;margin-top:3px;flex-wrap:wrap}
+.meal-source{font-size:11px;color:#888}
+.meal-tags-pre{font-size:10px;color:#bbb}
+.meal-right{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.avail-badge{font-size:11px;padding:2px 8px;border-radius:10px;white-space:nowrap;font-weight:500}
+.avail-ready{background:#E8F5E9;color:#2E7D32}
+.avail-soon{background:#FFF3E0;color:#E65100}
+.avail-later{background:#FFEBEE;color:#C62828}
+.ratings-inline{display:flex;gap:3px}
+.rb{font-size:10px;padding:2px 5px;border-radius:4px;font-weight:700}
+.rb-r{background:#EBF3FF;color:#1a6bc4}
+.rb-a{background:#E8F5E9;color:#2E7D32}
+.rb-e{background:#FFF8E1;color:#F57F17}
+.rb-c{background:#FCE4EC;color:#880E4F}
+
+/* DETAIL PANEL */
+.overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.35);z-index:200;display:none;align-items:center;justify-content:center;padding:16px}
+.overlay.open{display:flex}
+.panel{background:#fff;border-radius:16px;padding:22px;width:480px;max-width:100%;max-height:90vh;overflow-y:auto;position:relative;box-shadow:0 8px 32px rgba(0,0,0,0.15)}
+.panel-close{position:absolute;top:14px;right:14px;background:#f0f0eb;border:none;font-size:16px;cursor:pointer;color:#666;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.panel-close:hover{background:#e0e0db}
+.panel-title{font-size:17px;font-weight:700;margin-bottom:18px;padding-right:32px}
+.field{margin-bottom:14px}
+.field-label{font-size:10px;color:#888;margin-bottom:5px;text-transform:uppercase;letter-spacing:0.06em;font-weight:700}
+.field-input{width:100%;padding:8px 11px;border:1px solid #ddd;border-radius:8px;background:#fafafa;color:#1a1a1a;font-size:13px;font-family:inherit}
+.field-input:focus{outline:none;border-color:#999;background:#fff}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.field-static{width:100%;padding:8px 11px;border:1px solid #eee;border-radius:8px;background:#f5f5f0;color:#888;font-size:13px}
+.save-btn{width:100%;padding:10px;background:#1a1a1a;border:none;border-radius:10px;cursor:pointer;font-size:14px;font-weight:700;color:#fff;margin-top:6px}
+.save-btn:hover{background:#333}
+.delete-btn{width:100%;padding:8px;background:none;border:1px solid #ffcdd2;border-radius:10px;cursor:pointer;font-size:13px;color:#c62828;margin-top:6px}
+.delete-btn:hover{background:#ffebee}
+.ratings-grid{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px}
+.rating-box{display:flex;flex-direction:column;gap:5px;align-items:center}
+.rating-person{font-size:11px;font-weight:700;letter-spacing:0.04em}
+.rp-r{color:#1a6bc4}.rp-a{color:#2E7D32}.rp-e{color:#F57F17}.rp-c{color:#880E4F}
+.stars{display:flex;gap:2px}
+.star{font-size:18px;cursor:pointer;line-height:1;color:#e0e0e0;user-select:none}
+.star.on{color:#F9A825}
+.rating-val{font-size:11px;color:#888;min-height:16px}
+
+/* SEARCH POPUP */
+.search-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.25);z-index:300;display:none;align-items:flex-start;justify-content:center;padding-top:80px}
+.search-overlay.open{display:flex}
+.search-box{background:#fff;border-radius:14px;width:440px;max-width:95vw;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.15)}
+.search-box input{width:100%;padding:14px 16px;border:none;border-bottom:1px solid #e8e8e4;background:transparent;color:#1a1a1a;font-size:14px;font-family:inherit}
+.search-box input:focus{outline:none}
+.search-results{max-height:360px;overflow-y:auto}
+.sr{padding:10px 16px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.sr:hover{background:#f9f9f7}
+.sr.dimmed{opacity:0.4}
+.sr-name{font-size:13px;font-weight:600}
+.sr-meta{font-size:11px;color:#888;margin-top:1px}
+.sr-right{display:flex;align-items:center;gap:5px;flex-shrink:0}
+.search-cancel{width:100%;padding:10px;background:none;border:none;border-top:1px solid #e8e8e4;cursor:pointer;font-size:12px;color:#888}
+.search-cancel:hover{background:#f5f5f0}
+.empty{padding:24px;text-align:center;color:#bbb;font-size:13px}
+
+/* NOTE EDITOR */
+.note-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.25);z-index:300;display:none;align-items:center;justify-content:center;padding:16px}
+.note-overlay.open{display:flex}
+.note-box{background:#fff;border-radius:14px;padding:20px;width:360px;max-width:100%;box-shadow:0 8px 32px rgba(0,0,0,0.15)}
+.note-box h3{font-size:14px;font-weight:700;margin-bottom:12px}
+.note-box input{width:100%;padding:8px 11px;border:1px solid #ddd;border-radius:8px;font-size:13px;font-family:inherit;margin-bottom:6px}
+.note-box input:focus{outline:none;border-color:#999}
+.note-hint{font-size:11px;color:#aaa;margin-bottom:12px;line-height:1.5}
+.note-actions{display:flex;gap:8px}
+.note-save{flex:1;padding:8px;background:#1a1a1a;border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:600;cursor:pointer}
+.note-cancel{flex:1;padding:8px;background:#f0f0eb;border:none;border-radius:8px;color:#666;font-size:13px;cursor:pointer}
+
+/* LOADING */
+.loading{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;gap:12px;color:#888;font-size:13px}
+.spinner{width:24px;height:24px;border:2px solid #e8e8e4;border-top-color:#1a1a1a;border-radius:50%;animation:spin 0.7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* TOAST */
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;padding:10px 20px;border-radius:10px;font-size:13px;font-weight:500;z-index:500;opacity:0;transition:opacity 0.2s;pointer-events:none}
+.toast.show{opacity:1}
+</style>
+</head>
+<body>
+
+<!-- AUTH SCREEN -->
+<div id="auth-screen" class="auth-screen">
+  <div class="auth-logo">🍽️</div>
+  <div class="auth-title">Family Meal Planner</div>
+  <div class="auth-subtitle">Sign in with Google to sync your meals across all family devices</div>
+  <button class="auth-btn" onclick="signIn()">
+    <svg width="20" height="20" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20H24v8h11.3C33.6 33.1 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3 0 5.7 1.1 7.8 2.9l5.7-5.7C34.1 6.5 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20c11 0 20-8 20-20 0-1.3-.1-2.7-.4-4z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.5 15.1 18.9 12 24 12c3 0 5.7 1.1 7.8 2.9l5.7-5.7C34.1 6.5 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-1.9 13.4-5l-6.2-5.2C29.3 35.3 26.8 36 24 36c-5.2 0-9.6-3-11.3-7.2l-6.6 5.1C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20H24v8h11.3c-.8 2.4-2.4 4.4-4.5 5.8l6.2 5.2C40.9 35.5 44 30.1 44 24c0-1.3-.1-2.7-.4-4z"/></svg>
+    Sign in with Google
+  </button>
+  <div class="auth-error" id="auth-error"></div>
+</div>
+
+<!-- MAIN APP -->
+<div id="main-app" style="display:none">
+  <div class="app">
+    <div class="topbar">
+      <div class="topbar-left">
+        <span class="topbar-title" id="topbar-title">Family Meal Planner</span>
+        <button class="nav-btn" id="back-btn" style="display:none" onclick="goBack()">← Back</button>
+      </div>
+      <div class="topbar-right">
+        <div class="sync-indicator">
+          <div class="sync-dot" id="sync-dot"></div>
+          <span id="sync-label">ready</span>
+        </div>
+        <button class="nav-btn" onclick="showScreen('list')">Meal List</button>
+        <img class="user-avatar" id="user-avatar" src="" alt="User" onclick="signOut()" title="Sign out">
+      </div>
+    </div>
+
+    <div class="screen active" id="screen-calendar">
+      <div class="cal-header">
+        <span class="cal-month" id="cal-month-label"></span>
+        <div class="cal-nav">
+          <button onclick="changeMonth(-1)">‹</button>
+          <button onclick="goToToday()">Today</button>
+          <button onclick="changeMonth(1)">›</button>
+        </div>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
+    </div>
+
+    <div class="screen" id="screen-week">
+      <div class="week-scroll-container" id="week-scroll">
+        <div id="week-rows"></div>
+      </div>
+    </div>
+
+    <div class="screen" id="screen-list">
+      <div class="list-toolbar">
+        <input class="list-search" id="list-search" placeholder='Search: "chili", "R:5", "hockey", "crockpot"...' oninput="renderMealList()">
+        <select class="list-sort" id="list-sort" onchange="renderMealList()">
+          <option value="name">A – Z</option>
+          <option value="rR">Ron's favorites</option>
+          <option value="rA">Angela's favorites</option>
+          <option value="rE">Ellen's favorites</option>
+          <option value="rC">Claire's favorites</option>
+          <option value="avail">Available first</option>
+          <option value="recent">Recently made</option>
+        </select>
+        <button class="add-btn" onclick="openNewMeal()">+ Add meal</button>
+        <div class="search-hint">💡 "R:5" = Ron's top meals · "hockey" = hockey night options · "crockpot" = Ron can make</div>
+      </div>
+      <div class="meal-list-items" id="meal-list-items"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MEAL DETAIL -->
+<div class="overlay" id="detail-overlay" onclick="maybeCloseDetail(event)">
+  <div class="panel">
+    <button class="panel-close" onclick="closeDetail()">✕</button>
+    <div class="panel-title" id="detail-title">Meal</div>
+    <div class="field">
+      <div class="field-label">Meal name</div>
+      <input class="field-input" id="d-name" type="text" placeholder="Name">
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <div class="field-label">Source / recipe location</div>
+        <input class="field-input" id="d-source" type="text" placeholder="e.g. BB p.187, KCC p.78">
+      </div>
+      <div class="field">
+        <div class="field-label">Last made</div>
+        <input class="field-input" id="d-lastmade" type="date" oninput="updateNextAvail()">
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <div class="field-label">Cooldown (days)</div>
+        <input class="field-input" id="d-cooldown" type="number" min="0" max="365" oninput="updateNextAvail()">
+      </div>
+      <div class="field">
+        <div class="field-label">Next available</div>
+        <div class="field-static" id="d-nextavail">—</div>
+      </div>
+    </div>
+    <div class="field">
+      <div class="field-label">Assign to date</div>
+      <input class="field-input" id="d-assign" type="date">
+    </div>
+    <div class="field">
+      <div class="field-label">Tags (hockey, crockpot, GF, quick, ron away, angela only...)</div>
+      <input class="field-input" id="d-tags" type="text" placeholder="comma separated">
+    </div>
+    <div class="field">
+      <div class="field-label">Notes</div>
+      <textarea class="field-input" id="d-notes" rows="2" placeholder="Anything to remember..."></textarea>
+    </div>
+    <div class="field">
+      <div class="field-label">Ratings — click stars</div>
+      <div class="ratings-grid">
+        <div class="rating-box"><div class="rating-person rp-r">Ron</div><div class="stars" id="stars-rR"></div><div class="rating-val" id="rval-rR"></div></div>
+        <div class="rating-box"><div class="rating-person rp-a">Angela</div><div class="stars" id="stars-rA"></div><div class="rating-val" id="rval-rA"></div></div>
+        <div class="rating-box"><div class="rating-person rp-e">Ellen</div><div class="stars" id="stars-rE"></div><div class="rating-val" id="rval-rE"></div></div>
+        <div class="rating-box"><div class="rating-person rp-c">Claire</div><div class="stars" id="stars-rC"></div><div class="rating-val" id="rval-rC"></div></div>
+      </div>
+    </div>
+    <button class="save-btn" onclick="saveMeal()">Save to Google Sheets</button>
+    <button class="delete-btn" id="delete-btn" onclick="deleteMeal()">Delete meal</button>
+  </div>
+</div>
+
+<!-- ASSIGN SEARCH -->
+<div class="search-overlay" id="search-overlay" onclick="maybeCloseSearch(event)">
+  <div class="search-box">
+    <input id="search-input" placeholder='Search meals... "chili", "R:5", "hockey"' oninput="renderSearch()" autocomplete="off">
+    <div class="search-results" id="search-results"></div>
+    <button class="search-cancel" onclick="closeSearch()">Cancel</button>
+  </div>
+</div>
+
+<!-- NOTE EDITOR -->
+<div class="note-overlay" id="note-overlay" onclick="maybeCloseNote(event)">
+  <div class="note-box">
+    <h3 id="note-date-label">Day notes</h3>
+    <input id="note-input" type="text" placeholder="e.g. R+E hockey, Ron away, Claire home...">
+    <div class="note-hint">💡 "hockey" = orange tag · "away" = red tag · others = green</div>
+    <div class="note-actions">
+      <button class="note-save" onclick="saveNote()">Save</button>
+      <button class="note-cancel" onclick="closeNote()">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- GOOGLE API -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script>
+// ── CONFIG ────────────────────────────────────────────────────────────────────
+const CONFIG = {
+  CLIENT_ID: '125773716237-272eibrmuf5c49v374ekpfcnuorcapbe.apps.googleusercontent.com',
+  SHEET_ID:  '1W3GVNLz4rykB7U3ZYLFz4nkViM-4TJA6_UCVrCZGKBA',
+  CAL_ID:    '512aa1a8ced420fa55071212d0c006e2cc0f101ccf8b1b07f8dc4e9a461bb434@group.calendar.google.com',
+  SCOPES:    'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/calendar openid profile email',
+  SHEET_NAME:'Meals',
+  CAL_COLOR: '#4285F4',
+};
+
+// ── STATE ─────────────────────────────────────────────────────────────────────
+const TODAY = new Date();
+TODAY.setHours(0,0,0,0);
+const DAYS   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+let accessToken   = null;
+let userProfile   = null;
+let meals         = [];
+let calEvents     = {};  // dateKey -> [{id, title, eventId}]
+let dayNotes      = JSON.parse(localStorage.getItem('mp_notes')||'{}');
+let currentScreen = 'calendar';
+let prevScreen    = 'calendar';
+let calYear       = TODAY.getFullYear();
+let calMonth      = TODAY.getMonth();
+let weekBaseDate  = new Date(TODAY);
+let editingMealId = null;
+let assigningDateKey = null;
+let editingNoteKey   = null;
+let currentRatings   = {rR:'',rA:'',rE:'',rC:''};
+
+// ── UTILS ─────────────────────────────────────────────────────────────────────
+function dateKey(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function parseDate(s){ if(!s)return null; const p=s.split('-'); return new Date(+p[0],+p[1]-1,+p[2]); }
+function addDays(d,n){ const r=new Date(d); r.setDate(r.getDate()+n); return r; }
+function daysBetween(a,b){ return Math.round((b-a)/86400000); }
+function fmtDate(d){ return DAYS[d.getDay()]+', '+MONTHS[d.getMonth()].slice(0,3)+' '+d.getDate(); }
+
+function showToast(msg, dur=2500){
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),dur);
+}
+
+function setSyncStatus(status){
+  const dot=document.getElementById('sync-dot');
+  const label=document.getElementById('sync-label');
+  dot.className='sync-dot '+status;
+  label.textContent=status==='syncing'?'syncing...':status==='synced'?'synced':status==='error'?'sync error':'ready';
+}
+
+function getAvailability(m){
+  if(!m.LastMade||!m.Cooldown)return{status:'ready',label:'ready'};
+  const last=parseDate(m.LastMade);
+  const next=addDays(last,Number(m.Cooldown));
+  const dl=daysBetween(TODAY,next);
+  if(dl<=0)return{status:'ready',label:'ready'};
+  if(dl<=14)return{status:'soon',label:'in '+dl+'d'};
+  return{status:'later',label:MONTHS[next.getMonth()].slice(0,3)+' '+next.getDate()};
+}
+
+function parseRatingFilter(q){
+  const m=q.match(/\b([raec]):(\d)/i);
+  if(!m)return null;
+  const map={r:'Rating_R',a:'Rating_A',e:'Rating_E',c:'Rating_C'};
+  return{key:map[m[1].toLowerCase()],val:parseInt(m[2])};
+}
+
+// ── AUTH ──────────────────────────────────────────────────────────────────────
+function signIn(){
+  const client = google.accounts.oauth2.initTokenClient({
+    client_id: CONFIG.CLIENT_ID,
+    scope: CONFIG.SCOPES,
+    callback: async (resp) => {
+      if(resp.error){ document.getElementById('auth-error').textContent='Sign in failed: '+resp.error; return; }
+      accessToken = resp.access_token;
+      await fetchUserProfile();
+      document.getElementById('auth-screen').style.display='none';
+      document.getElementById('main-app').style.display='block';
+      await loadAll();
+    }
+  });
+  client.requestAccessToken();
+}
+
+async function fetchUserProfile(){
+  const r = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {headers:{Authorization:'Bearer '+accessToken}});
+  userProfile = await r.json();
+  const av = document.getElementById('user-avatar');
+  if(userProfile.picture) av.src=userProfile.picture;
+  av.title = (userProfile.name||'User')+' — click to sign out';
+}
+
+function signOut(){
+  if(!confirm('Sign out?'))return;
+  accessToken=null; userProfile=null; meals=[]; calEvents={};
+  document.getElementById('main-app').style.display='none';
+  document.getElementById('auth-screen').style.display='flex';
+}
+
+// ── GOOGLE SHEETS — MEALS ────────────────────────────────────────────────────
+const SHEET_COLS = ['Name','Source','Tags','Cooldown','Rating_R','Rating_A','Rating_E','Rating_C','Notes','LastMade'];
+
+async function sheetsGet(range){
+  const url=`https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/${encodeURIComponent(range)}`;
+  const r=await fetch(url,{headers:{Authorization:'Bearer '+accessToken}});
+  if(!r.ok) throw new Error('Sheets read failed: '+r.status);
+  return r.json();
+}
+
+async function sheetsUpdate(range, values){
+  const url=`https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/${encodeURIComponent(range)}?valueInputOption=RAW`;
+  const r=await fetch(url,{method:'PUT',headers:{Authorization:'Bearer '+accessToken,'Content-Type':'application/json'},body:JSON.stringify({values})});
+  if(!r.ok) throw new Error('Sheets write failed: '+r.status);
+  return r.json();
+}
+
+async function sheetsAppend(values){
+  const url=`https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/${CONFIG.SHEET_NAME}!A:J:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`;
+  const r=await fetch(url,{method:'POST',headers:{Authorization:'Bearer '+accessToken,'Content-Type':'application/json'},body:JSON.stringify({values:[values]})});
+  if(!r.ok) throw new Error('Sheets append failed: '+r.status);
+  return r.json();
+}
+
+async function loadMeals(){
+  try{
+    const data = await sheetsGet(`${CONFIG.SHEET_NAME}!A:J`);
+    const rows = data.values||[];
+    if(rows.length<=1){ await seedMeals(); return; }
+    meals = rows.slice(1).map((row,i)=>{
+      const m={_row:i+2};
+      SHEET_COLS.forEach((col,j)=>{ m[col]=row[j]||''; });
+      m.id=m._row;
+      return m;
+    }).filter(m=>m.Name);
+  }catch(e){ console.error('loadMeals',e); showToast('Could not load meals from Sheets'); }
+}
+
+async function seedMeals(){
+  // Write header
+  await sheetsUpdate(`${CONFIG.SHEET_NAME}!A1:J1`,[SHEET_COLS]);
+  // Write all default meals
+  const rows = DEFAULT_MEALS.map(m=>SHEET_COLS.map(c=>m[c]||''));
+  const url=`https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/${CONFIG.SHEET_NAME}!A2:J${rows.length+1}?valueInputOption=RAW`;
+  await fetch(url,{method:'PUT',headers:{Authorization:'Bearer '+accessToken,'Content-Type':'application/json'},body:JSON.stringify({values:rows})});
+  await loadMeals();
+  showToast('✅ Meal list initialized in Google Sheets!');
+}
+
+async function saveMealToSheets(m){
+  setSyncStatus('syncing');
+  try{
+    const values = SHEET_COLS.map(c=>m[c]||'');
+    if(m._row){
+      await sheetsUpdate(`${CONFIG.SHEET_NAME}!A${m._row}:J${m._row}`,[values]);
+    } else {
+      await sheetsAppend(values);
+      await loadMeals();
+    }
+    setSyncStatus('synced');
+    setTimeout(()=>setSyncStatus(''),3000);
+  }catch(e){ console.error('saveMeal',e); setSyncStatus('error'); showToast('Sync error — check connection'); }
+}
+
+async function deleteMealFromSheets(m){
+  if(!m._row)return;
+  setSyncStatus('syncing');
+  try{
+    // Clear the row
+    await sheetsUpdate(`${CONFIG.SHEET_NAME}!A${m._row}:J${m._row}`,[['','','','','','','','','','']]);
+    setSyncStatus('synced');
+    setTimeout(()=>setSyncStatus(''),3000);
+  }catch(e){ setSyncStatus('error'); }
+}
+
+// ── GOOGLE CALENDAR ───────────────────────────────────────────────────────────
+async function loadCalendarEvents(){
+  try{
+    const now = new Date(calYear, calMonth-1, 1).toISOString();
+    const end = new Date(calYear, calMonth+3, 1).toISOString();
+    const url = `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(CONFIG.CAL_ID)}/events?timeMin=${now}&timeMax=${end}&singleEvents=true&maxResults=500`;
+    const r = await fetch(url,{headers:{Authorization:'Bearer '+accessToken}});
+    if(!r.ok) throw new Error('Calendar read failed');
+    const data = await r.json();
+    calEvents={};
+    (data.items||[]).forEach(ev=>{
+      const dk = ev.start?.date || ev.start?.dateTime?.split('T')[0];
+      if(!dk)return;
+      if(!calEvents[dk])calEvents[dk]=[];
+      calEvents[dk].push({title:ev.summary||'',eventId:ev.id});
+    });
+  }catch(e){ console.error('loadCal',e); showToast('Could not load calendar events'); }
+}
+
+async function addCalendarEvent(dk, title){
+  setSyncStatus('syncing');
+  try{
+    const body={summary:title,start:{date:dk},end:{date:dk},colorId:'7'};
+    const r=await fetch(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(CONFIG.CAL_ID)}/events`,{
+      method:'POST',headers:{Authorization:'Bearer '+accessToken,'Content-Type':'application/json'},body:JSON.stringify(body)
+    });
+    if(!r.ok) throw new Error('Calendar write failed');
+    const ev=await r.json();
+    if(!calEvents[dk])calEvents[dk]=[];
+    calEvents[dk].push({title,eventId:ev.id});
+    setSyncStatus('synced');
+    setTimeout(()=>setSyncStatus(''),3000);
+    showToast('✅ Added to Google Calendar!');
+  }catch(e){ console.error('addCal',e); setSyncStatus('error'); showToast('Calendar sync error'); }
+}
+
+async function removeCalendarEvent(dk, eventId){
+  setSyncStatus('syncing');
+  try{
+    await fetch(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(CONFIG.CAL_ID)}/events/${eventId}`,{
+      method:'DELETE',headers:{Authorization:'Bearer '+accessToken}
+    });
+    calEvents[dk]=(calEvents[dk]||[]).filter(e=>e.eventId!==eventId);
+    setSyncStatus('synced');
+    setTimeout(()=>setSyncStatus(''),3000);
+  }catch(e){ setSyncStatus('error'); }
+}
+
+async function loadAll(){
+  setSyncStatus('syncing');
+  await Promise.all([loadMeals(), loadCalendarEvents()]);
+  setSyncStatus('synced');
+  setTimeout(()=>setSyncStatus(''),3000);
+  renderCalendar();
+}
+
+// ── NAV ───────────────────────────────────────────────────────────────────────
+function showScreen(s){
+  prevScreen=currentScreen; currentScreen=s;
+  document.querySelectorAll('.screen').forEach(el=>el.classList.remove('active'));
+  document.getElementById('screen-'+s).classList.add('active');
+  document.getElementById('back-btn').style.display=(s==='calendar')?'none':'';
+  const titles={calendar:'Family Meal Planner',week:'Week View',list:'Meal List'};
+  document.getElementById('topbar-title').textContent=titles[s];
+  if(s==='calendar')renderCalendar();
+  else if(s==='week')renderWeek();
+  else renderMealList();
+}
+
+function goBack(){ showScreen(prevScreen==='week'?'week':prevScreen==='list'?'list':'calendar'); }
+function goToToday(){ calYear=TODAY.getFullYear(); calMonth=TODAY.getMonth(); loadCalendarEvents().then(renderCalendar); }
+function changeMonth(d){ calMonth+=d; if(calMonth>11){calMonth=0;calYear++;} if(calMonth<0){calMonth=11;calYear--;} loadCalendarEvents().then(renderCalendar); }
+
+// ── CALENDAR ──────────────────────────────────────────────────────────────────
+function renderCalendar(){
+  document.getElementById('cal-month-label').textContent=MONTHS[calMonth]+' '+calYear;
+  const grid=document.getElementById('cal-grid');
+  grid.innerHTML='';
+  DAYS.forEach(d=>{ const el=document.createElement('div');el.className='cal-dow';el.textContent=d;grid.appendChild(el); });
+  const first=new Date(calYear,calMonth,1), startDow=first.getDay();
+  const dim=new Date(calYear,calMonth+1,0).getDate();
+  for(let i=0;i<startDow;i++) grid.appendChild(makeCalCell(new Date(calYear,calMonth,1-startDow+i),true));
+  for(let d=1;d<=dim;d++) grid.appendChild(makeCalCell(new Date(calYear,calMonth,d),false));
+  const rem=(7-((startDow+dim)%7))%7;
+  for(let i=1;i<=rem;i++) grid.appendChild(makeCalCell(new Date(calYear,calMonth+1,i),true));
+}
+
+function makeCalCell(date,other){
+  const dk=dateKey(date), isToday=dk===dateKey(TODAY);
+  const cell=document.createElement('div');
+  cell.className='cal-cell'+(other?' other-month':'')+(isToday?' today':'');
+  const dateDiv=document.createElement('div');dateDiv.className='cal-date';dateDiv.textContent=date.getDate();cell.appendChild(dateDiv);
+  const note=dayNotes[dk]||'';
+  if(note){
+    const chip=document.createElement('div');
+    const nl=note.toLowerCase();
+    chip.className='cal-chip '+(nl.includes('hockey')?'chip-hockey':nl.includes('away')?'chip-away':'chip-note');
+    chip.textContent=note; cell.appendChild(chip);
+  }
+  (calEvents[dk]||[]).forEach(ev=>{
+    const chip=document.createElement('div');chip.className='cal-chip chip-meal';chip.textContent=ev.title;cell.appendChild(chip);
+  });
+  cell.onclick=()=>{ weekBaseDate=new Date(date); showScreen('week'); };
+  return cell;
+}
+
+// ── WEEK ──────────────────────────────────────────────────────────────────────
+function renderWeek(){
+  const container=document.getElementById('week-rows');
+  container.innerHTML='';
+  for(let i=-3;i<=10;i++) container.appendChild(makeWeekRow(addDays(weekBaseDate,i)));
+  const scroll=document.getElementById('week-scroll');
+  scroll.onscroll=()=>{
+    if(scroll.scrollTop<100){ prependDays(4); scroll.scrollTop+=4*90; }
+    if(scroll.scrollTop+scroll.clientHeight>scroll.scrollHeight-100) appendDays(4);
+  };
+  setTimeout(()=>{ scroll.scrollTop=3*90; },30);
+}
+
+function prependDays(n){
+  const c=document.getElementById('week-rows');
+  const first=new Date(c.firstChild.dataset.date);
+  for(let i=n;i>=1;i--) c.insertBefore(makeWeekRow(addDays(first,-i)),c.firstChild);
+}
+
+function appendDays(n){
+  const c=document.getElementById('week-rows');
+  const last=new Date(c.lastChild.dataset.date);
+  for(let i=1;i<=n;i++) c.appendChild(makeWeekRow(addDays(last,i)));
+}
+
+function makeWeekRow(date){
+  const dk=dateKey(date), isToday=dk===dateKey(TODAY);
+  const note=dayNotes[dk]||'';
+  const events=calEvents[dk]||[];
+  const row=document.createElement('div');
+  row.className='week-day-row'+(isToday?' today-row':'');
+  row.dataset.date=dk;
+
+  const label=document.createElement('div');label.className='week-day-label';
+  const dn=document.createElement('div');dn.className='week-day-name';dn.textContent=DAYS[date.getDay()];
+  const num=document.createElement('div');num.className='week-day-num'+(isToday?' today-num':'');num.textContent=date.getDate();
+  const mon=document.createElement('div');mon.className='week-month-label';mon.textContent=MONTHS[date.getMonth()].slice(0,3);
+  label.appendChild(dn);label.appendChild(num);label.appendChild(mon);
+
+  const content=document.createElement('div');content.className='week-day-content';
+
+  // Notes/tags row
+  if(note){
+    const tags=document.createElement('div');tags.className='week-tags';
+    note.split(',').forEach(t=>{
+      const tag=document.createElement('span');
+      const tv=t.trim().toLowerCase();
+      tag.className='week-tag '+(tv.includes('hockey')?'tag-hockey':tv.includes('away')?'tag-away':tv?'tag-note':'tag-generic');
+      tag.textContent=t.trim(); tags.appendChild(tag);
+    });
+    const eb=document.createElement('button');eb.className='note-edit-btn';eb.textContent='edit note';
+    eb.onclick=(e)=>{e.stopPropagation();openNote(dk,note);};
+    tags.appendChild(eb);
+    content.appendChild(tags);
+  } else {
+    const ab=document.createElement('button');ab.className='week-btn';ab.style.fontSize='10px';ab.style.padding='2px 7px';ab.textContent='+ add note';
+    ab.onclick=(e)=>{e.stopPropagation();openNote(dk,'');};
+    content.appendChild(ab);
+  }
+
+  // Meals
+  const mealsDiv=document.createElement('div');mealsDiv.className='week-meals';
+  if(events.length){
+    events.forEach(ev=>{
+      const mealRow=document.createElement('div');mealRow.className='week-meal-row';
+      const mn=document.createElement('span');mn.className='week-meal-name';mn.textContent=ev.title;
+      const clr=document.createElement('button');clr.className='week-btn danger';clr.textContent='remove';
+      clr.onclick=async()=>{ await removeCalendarEvent(dk,ev.eventId); renderWeek(); if(currentScreen==='calendar')renderCalendar(); };
+      mealRow.appendChild(mn);mealRow.appendChild(clr);
+      mealsDiv.appendChild(mealRow);
+    });
+  }
+  // Add meal button
+  const addRow=document.createElement('div');addRow.className='week-meal-row';
+  if(!events.length){const em=document.createElement('span');em.className='week-meal-empty';em.textContent='no meal planned';addRow.appendChild(em);}
+  const add=document.createElement('button');add.className='week-btn';add.textContent='+ assign meal';add.onclick=()=>openAssign(dk);
+  addRow.appendChild(add);
+  mealsDiv.appendChild(addRow);
+  content.appendChild(mealsDiv);
+
+  row.appendChild(label);row.appendChild(content);
+  return row;
+}
+
+// ── MEAL LIST ─────────────────────────────────────────────────────────────────
+function renderMealList(){
+  const q=(document.getElementById('list-search').value||'').toLowerCase().trim();
+  const sortBy=document.getElementById('list-sort').value;
+  const rf=parseRatingFilter(q);
+  const textQ=rf?'':q;
+
+  let filtered=meals.filter(m=>{
+    if(rf) return (parseInt(m[rf.key])||0)>=rf.val;
+    if(!textQ)return true;
+    return m.Name.toLowerCase().includes(textQ)||(m.Tags||'').toLowerCase().includes(textQ)||(m.Source||'').toLowerCase().includes(textQ)||(m.Notes||'').toLowerCase().includes(textQ);
+  });
+
+  filtered.sort((a,b)=>{
+    if(sortBy==='name')return a.Name.localeCompare(b.Name);
+    if(sortBy==='avail'){const s={ready:0,soon:1,later:2};return s[getAvailability(a).status]-s[getAvailability(b).status];}
+    if(sortBy==='recent'){return (b.LastMade||'').localeCompare(a.LastMade||'');}
+    return (parseInt(b[sortBy])||0)-(parseInt(a[sortBy])||0);
+  });
+
+  const items=document.getElementById('meal-list-items');
+  items.innerHTML='';
+  if(!filtered.length){items.innerHTML='<div class="empty">No meals found</div>';return;}
+  filtered.forEach(m=>{
+    const av=getAvailability(m);
+    const el=document.createElement('div');
+    el.className='meal-item'+(av.status==='later'?' cooldown':'');
+    el.onclick=()=>openDetail(m.id);
+    const left=document.createElement('div');left.className='meal-left';
+    const name=document.createElement('div');name.className='meal-name';name.textContent=m.Name;
+    const meta=document.createElement('div');meta.className='meal-meta';
+    if(m.Source){const s=document.createElement('span');s.className='meal-source';s.textContent=m.Source;meta.appendChild(s);}
+    if(m.Tags){const t=document.createElement('span');t.className='meal-tags-pre';t.textContent=m.Tags.split(',').slice(0,3).map(x=>x.trim()).join(' · ');meta.appendChild(t);}
+    const ri=document.createElement('div');ri.className='ratings-inline';
+    [['Rating_R','R','rb-r'],['Rating_A','A','rb-a'],['Rating_E','E','rb-e'],['Rating_C','C','rb-c']].forEach(([k,l,c])=>{
+      if(m[k]){const b=document.createElement('span');b.className='rb '+c;b.textContent=l+':'+m[k];ri.appendChild(b);}
+    });
+    if(ri.children.length)meta.appendChild(ri);
+    left.appendChild(name);left.appendChild(meta);
+    const right=document.createElement('div');right.className='meal-right';
+    const badge=document.createElement('span');badge.className='avail-badge avail-'+av.status;badge.textContent=av.label;
+    right.appendChild(badge);
+    el.appendChild(left);el.appendChild(right);
+    items.appendChild(el);
+  });
+}
+
+// ── DETAIL PANEL ──────────────────────────────────────────────────────────────
+function openDetail(id){
+  editingMealId=id;
+  const m=meals.find(x=>x.id===id);
+  if(!m)return;
+  currentRatings={rR:m.Rating_R||'',rA:m.Rating_A||'',rE:m.Rating_E||'',rC:m.Rating_C||''};
+  document.getElementById('detail-title').textContent=m.Name||'New meal';
+  document.getElementById('d-name').value=m.Name||'';
+  document.getElementById('d-source').value=m.Source||'';
+  document.getElementById('d-lastmade').value=m.LastMade||'';
+  document.getElementById('d-cooldown').value=m.Cooldown||14;
+  document.getElementById('d-tags').value=m.Tags||'';
+  document.getElementById('d-notes').value=m.Notes||'';
+  document.getElementById('d-assign').value='';
+  document.getElementById('delete-btn').style.display=m._new?'none':'';
+  updateNextAvail();
+  ['rR','rA','rE','rC'].forEach(p=>renderStars(p,currentRatings[p]));
+  document.getElementById('detail-overlay').classList.add('open');
+}
+
+function openNewMeal(){
+  const id=Date.now();
+  const m={id,_new:true,Name:'',Source:'',Tags:'',Cooldown:'14',Rating_R:'',Rating_A:'',Rating_E:'',Rating_C:'',Notes:'',LastMade:''};
+  meals.unshift(m);
+  openDetail(id);
+}
+
+function updateNextAvail(){
+  const last=document.getElementById('d-lastmade').value;
+  const cd=parseInt(document.getElementById('d-cooldown').value)||0;
+  if(!last||!cd){document.getElementById('d-nextavail').textContent='—';return;}
+  const next=addDays(parseDate(last),cd);
+  const dl=daysBetween(TODAY,next);
+  document.getElementById('d-nextavail').textContent=dl>0?MONTHS[next.getMonth()].slice(0,3)+' '+next.getDate()+' (in '+dl+'d)':'Ready now';
+}
+
+function renderStars(person,val){
+  const key='r'+person.slice(-1);
+  const ratingKey='Rating_'+person.slice(-1).toUpperCase();
+  const c=document.getElementById('stars-'+person);
+  const v=parseInt(val)||0;
+  c.innerHTML='';
+  for(let i=1;i<=5;i++){
+    const s=document.createElement('span');s.className='star'+(i<=v?' on':'');s.textContent='★';
+    s.onmouseover=()=>{ Array.from(c.children).forEach((st,j)=>st.className='star'+(j<i?' on':'')); };
+    s.onmouseout=()=>renderStars(person,currentRatings[person]);
+    s.onclick=(function(star){return function(){ currentRatings[person]=String(star); renderStars(person,star); };})(i);
+    c.appendChild(s);
+  }
+  document.getElementById('rval-'+person).textContent=v>0?v+' / 5':'';
+}
+
+async function saveMeal(){
+  const m=meals.find(x=>x.id===editingMealId);
+  if(!m)return;
+  m.Name=document.getElementById('d-name').value.trim()||'Unnamed meal';
+  m.Source=document.getElementById('d-source').value.trim();
+  m.LastMade=document.getElementById('d-lastmade').value;
+  m.Cooldown=document.getElementById('d-cooldown').value||'14';
+  m.Tags=document.getElementById('d-tags').value.trim();
+  m.Notes=document.getElementById('d-notes').value.trim();
+  m.Rating_R=currentRatings.rR; m.Rating_A=currentRatings.rA;
+  m.Rating_E=currentRatings.rE; m.Rating_C=currentRatings.rC;
+  const assignDate=document.getElementById('d-assign').value;
+  if(assignDate){
+    m.LastMade=assignDate;
+    await addCalendarEvent(assignDate, m.Name);
+  }
+  delete m._new;
+  await saveMealToSheets(m);
+  closeDetail();
+  if(currentScreen==='list')renderMealList();
+  if(currentScreen==='week')renderWeek();
+  if(currentScreen==='calendar')renderCalendar();
+  showToast('✅ '+m.Name+' saved!');
+}
+
+async function deleteMeal(){
+  if(!confirm('Delete this meal from the list?'))return;
+  const m=meals.find(x=>x.id===editingMealId);
+  if(!m)return;
+  await deleteMealFromSheets(m);
+  meals=meals.filter(x=>x.id!==editingMealId);
+  closeDetail();
+  if(currentScreen==='list')renderMealList();
+  showToast('Meal deleted');
+}
+
+function maybeCloseDetail(e){if(e.target===document.getElementById('detail-overlay'))closeDetail();}
+function closeDetail(){document.getElementById('detail-overlay').classList.remove('open');}
+
+// ── ASSIGN SEARCH ─────────────────────────────────────────────────────────────
+function openAssign(dk){
+  assigningDateKey=dk;
+  document.getElementById('search-input').value='';
+  renderSearch();
+  document.getElementById('search-overlay').classList.add('open');
+  setTimeout(()=>document.getElementById('search-input').focus(),80);
+}
+
+function renderSearch(){
+  const q=(document.getElementById('search-input').value||'').toLowerCase().trim();
+  const rf=parseRatingFilter(q);
+  const textQ=rf?'':q;
+  const results=document.getElementById('search-results');
+  results.innerHTML='';
+  const filtered=meals.filter(m=>{
+    if(rf) return (parseInt(m[rf.key])||0)>=rf.val;
+    if(!textQ)return true;
+    return m.Name.toLowerCase().includes(textQ)||(m.Tags||'').toLowerCase().includes(textQ);
+  });
+  if(!filtered.length){results.innerHTML='<div class="empty">No meals found</div>';return;}
+  filtered.slice(0,25).forEach(m=>{
+    const av=getAvailability(m);
+    const el=document.createElement('div');
+    el.className='sr'+(av.status==='later'?' dimmed':'');
+    const left=document.createElement('div');
+    const name=document.createElement('div');name.className='sr-name';name.textContent=m.Name;
+    const meta=document.createElement('div');meta.className='sr-meta';meta.textContent=m.Source||'';
+    left.appendChild(name);left.appendChild(meta);
+    const right=document.createElement('div');right.className='sr-right';
+    const ri=document.createElement('div');ri.style.cssText='display:flex;gap:3px';
+    [['Rating_R','R','rb-r'],['Rating_A','A','rb-a'],['Rating_E','E','rb-e'],['Rating_C','C','rb-c']].forEach(([k,l,c])=>{
+      if(m[k]){const b=document.createElement('span');b.className='rb '+c;b.style.fontSize='10px';b.textContent=l+':'+m[k];ri.appendChild(b);}
+    });
+    const badge=document.createElement('span');badge.className='avail-badge avail-'+av.status;badge.style.fontSize='10px';badge.textContent=av.label;
+    right.appendChild(ri);right.appendChild(badge);
+    el.appendChild(left);el.appendChild(right);
+    el.onclick=()=>assignMeal(m.id);
+    results.appendChild(el);
+  });
+}
+
+async function assignMeal(id){
+  const m=meals.find(x=>x.id===id);
+  if(!m||!assigningDateKey)return;
+  closeSearch();
+  m.LastMade=assigningDateKey;
+  await addCalendarEvent(assigningDateKey, m.Name);
+  await saveMealToSheets(m);
+  if(currentScreen==='week')renderWeek();
+  if(currentScreen==='calendar')renderCalendar();
+}
+
+function maybeCloseSearch(e){if(e.target===document.getElementById('search-overlay'))closeSearch();}
+function closeSearch(){document.getElementById('search-overlay').classList.remove('open');}
+
+// ── DAY NOTES ─────────────────────────────────────────────────────────────────
+function openNote(dk,existing){
+  editingNoteKey=dk;
+  const d=parseDate(dk);
+  document.getElementById('note-date-label').textContent=fmtDate(d);
+  document.getElementById('note-input').value=existing;
+  document.getElementById('note-overlay').classList.add('open');
+  setTimeout(()=>document.getElementById('note-input').focus(),80);
+}
+
+function saveNote(){
+  const val=document.getElementById('note-input').value.trim();
+  if(val) dayNotes[editingNoteKey]=val;
+  else delete dayNotes[editingNoteKey];
+  localStorage.setItem('mp_notes',JSON.stringify(dayNotes));
+  closeNote();
+  if(currentScreen==='week')renderWeek();
+  if(currentScreen==='calendar')renderCalendar();
+}
+
+function closeNote(){document.getElementById('note-overlay').classList.remove('open');}
+function maybeCloseNote(e){if(e.target===document.getElementById('note-overlay'))closeNote();}
+document.getElementById('note-input').addEventListener('keydown',e=>{if(e.key==='Enter')saveNote();});
+
+// ── DEFAULT MEALS DATA ────────────────────────────────────────────────────────
+const DEFAULT_MEALS = [
+  {Name:'Quiche',Source:'BB',Tags:'angela, ron away, eggs',Cooldown:'30',Rating_R:'3',Rating_A:'5',Rating_E:'4',Rating_C:'4',Notes:'Classic Ron-away meal',LastMade:'2026-04-28'},
+  {Name:'Salmon pasta dish',Source:'',Tags:'fish, pasta',Cooldown:'60',Rating_R:'4',Rating_A:'5',Rating_E:'',Rating_C:'',Notes:'',LastMade:'2026-04-22'},
+  {Name:'Turkey meatballs in red curry sauce',Source:'themodernproper.com',Tags:'turkey, spicy',Cooldown:'45',Rating_R:'',Rating_A:'5',Rating_E:'',Rating_C:'',Notes:'',LastMade:'2026-04-23'},
+  {Name:'Cheesy chili mac',Source:'BB',Tags:'easy, quick, ellen-friendly',Cooldown:'60',Rating_R:'4',Rating_A:'',Rating_E:'5',Rating_C:'',Notes:'',LastMade:'2026-04-25'},
+  {Name:'Belgian beef stew',Source:'D:ALS p.265',Tags:'beef, weekend, involved',Cooldown:'90',Rating_R:'5',Rating_A:'4',Rating_E:'3',Rating_C:'',Notes:'',LastMade:'2026-04-26'},
+  {Name:'Chicken + mushrooms w/ couscous',Source:'FN 3112 p.86',Tags:'chicken, angela',Cooldown:'30',Rating_R:'',Rating_A:'5',Rating_E:'',Rating_C:'',Notes:'',LastMade:'2026-04-30'},
+  {Name:'Black bean burritos',Source:'D:ALS p.53',Tags:'mexican, vegetarian, quick, ellen-friendly',Cooldown:'21',Rating_R:'3',Rating_A:'4',Rating_E:'4',Rating_C:'4',Notes:'',LastMade:'2026-05-01'},
+  {Name:'Meatloaf + mashed potatoes',Source:'KCC p.187',Tags:'beef, ron, comfort, meat and potatoes',Cooldown:'45',Rating_R:'5',Rating_A:'3',Rating_E:'4',Rating_C:'',Notes:'Ron loves this',LastMade:'2026-05-03'},
+  {Name:'Pasta with vodka sauce',Source:'BB',Tags:'pasta, quick, ellen-friendly, hockey',Cooldown:'14',Rating_R:'4',Rating_A:'4',Rating_E:'5',Rating_C:'4',Notes:'Ellen makes herself on hockey nights',LastMade:'2026-04-29'},
+  {Name:'Chili',Source:'Ron',Tags:'beef, ron cooks, crockpot, hockey, mild',Cooldown:'30',Rating_R:'5',Rating_A:'3',Rating_E:'4',Rating_C:'3',Notes:'Ron makes this.',LastMade:'2026-03-26'},
+  {Name:'Chicken pot pie',Source:'allrecipes.com',Tags:'chicken, comfort, weekend',Cooldown:'90',Rating_R:'5',Rating_A:'4',Rating_E:'5',Rating_C:'5',Notes:'',LastMade:'2026-02-22'},
+  {Name:'Butter chicken',Source:'KCC',Tags:'chicken, crockpot, mild, ron cooks',Cooldown:'45',Rating_R:'5',Rating_A:'4',Rating_E:'4',Rating_C:'4',Notes:'Slow cooker — Ron can make',LastMade:'2026-03-22'},
+  {Name:'Roast chicken',Source:'KCC p.78',Tags:'chicken, weekend, angela',Cooldown:'45',Rating_R:'4',Rating_A:'5',Rating_E:'4',Rating_C:'',Notes:'',LastMade:'2026-03-28'},
+  {Name:'Lentil soup',Source:'',Tags:'vegetarian, soup, quick',Cooldown:'30',Rating_R:'',Rating_A:'4',Rating_E:'',Rating_C:'',Notes:'',LastMade:'2026-04-09'},
+  {Name:'Pasta bolognese',Source:'BB',Tags:'pasta, beef, angela only, all day cook, weekend',Cooldown:'60',Rating_R:'5',Rating_A:'5',Rating_E:'4',Rating_C:'5',Notes:'All day cook — Angela only',LastMade:''},
+  {Name:'Slow cooker Indian butter chicken',Source:'dinnerthendessert.com',Tags:'chicken, crockpot, ron cooks, mild, hockey',Cooldown:'45',Rating_R:'5',Rating_A:'4',Rating_E:'4',Rating_C:'4',Notes:'Ron can make this',LastMade:'2026-01-28'},
+  {Name:'Pork tenderloin + potatoes',Source:'',Tags:'pork, ron in town, meat and potatoes',Cooldown:'30',Rating_R:'5',Rating_A:'3',Rating_E:'3',Rating_C:'',Notes:'Best when Ron is in town. Not Ellen\'s favorite.',LastMade:'2026-02-17'},
+  {Name:'Chicken noodle soup',Source:'D:ALS p.290',Tags:'chicken, soup, comfort, mild',Cooldown:'30',Rating_R:'4',Rating_A:'4',Rating_E:'4',Rating_C:'4',Notes:'',LastMade:'2026-01-21'},
+  {Name:'Steak + baked potatoes',Source:'',Tags:'beef, special occasion, ron in town, meat and potatoes',Cooldown:'60',Rating_R:'5',Rating_A:'4',Rating_E:'4',Rating_C:'',Notes:'Special occasion meal',LastMade:'2026-03-08'},
+  {Name:'Chicken + gravy',Source:'CL 1-2/21 pp.10-11',Tags:'chicken, comfort, mild',Cooldown:'30',Rating_R:'4',Rating_A:'4',Rating_E:'4',Rating_C:'',Notes:'',LastMade:'2026-04-19'},
+  {Name:'Pulled pork',Source:'BB',Tags:'pork, crockpot, ron cooks',Cooldown:'60',Rating_R:'5',Rating_A:'3',Rating_E:'3',Rating_C:'',Notes:'',LastMade:'2026-02-26'},
+  {Name:'Tomato soup + grilled cheese',Source:'KCC p.150',Tags:'soup, vegetarian, quick, easy',Cooldown:'30',Rating_R:'3',Rating_A:'4',Rating_E:'4',Rating_C:'4',Notes:'',LastMade:'2026-03-05'},
+  {Name:'Baked ziti',Source:'splendidtable.org',Tags:'pasta, ricotta, weekend',Cooldown:'45',Rating_R:'4',Rating_A:'4',Rating_E:'4',Rating_C:'4',Notes:'',LastMade:'2026-03-24'},
+  {Name:'Greek chicken souvlaki',Source:'KCC',Tags:'chicken, grilling',Cooldown:'45',Rating_R:'',Rating_A:'5',Rating_E:'',Rating_C:'',Notes:'',LastMade:'2026-03-13'},
+  {Name:'Chicken + sausage gumbo',Source:'BB',Tags:'chicken, sausage, weekend',Cooldown:'60',Rating_R:'4',Rating_A:'5',Rating_E:'3',Rating_C:'',Notes:'',LastMade:'2026-03-04'},
+  {Name:'Shredded pork tacos',Source:'',Tags:'pork, tacos, mexican, quick',Cooldown:'30',Rating_R:'4',Rating_A:'4',Rating_E:'4',Rating_C:'',Notes:'',LastMade:'2026-01-14'},
+  {Name:'Chicken burritos',Source:'',Tags:'chicken, mexican, quick, hockey, mild',Cooldown:'21',Rating_R:'4',Rating_A:'4',Rating_E:'4',Rating_C:'4',Notes:'',LastMade:'2026-01-28'},
+  {Name:'Pesto farfalle',Source:'',Tags:'pasta, quick, easy',Cooldown:'30',Rating_R:'3',Rating_A:'4',Rating_E:'4',Rating_C:'4',Notes:'',LastMade:'2024-11-09'},
+  {Name:'Chicken pizzas',Source:'BB',Tags:'pizza, chicken, quick, easy, hockey, mild',Cooldown:'21',Rating_R:'4',Rating_A:'3',Rating_E:'5',Rating_C:'4',Notes:'Good hockey night option',LastMade:'2026-04-30'},
+  {Name:'Beef stroganoff',Source:'FN 4/21 p.54',Tags:'beef, crockpot, comfort',Cooldown:'60',Rating_R:'5',Rating_A:'4',Rating_E:'4',Rating_C:'',Notes:'Slow cooker version — Ron can make',LastMade:'2024-08-13'},
+  {Name:'Baked potato soup',Source:'BB',Tags:'soup, vegetarian, comfort',Cooldown:'30',Rating_R:'4',Rating_A:'4',Rating_E:'4',Rating_C:'4',Notes:'',LastMade:'2026-03-17'},
+  {Name:'Chicken + sausage gumbo',Source:'BB',Tags:'chicken, sausage, weekend, involved',Cooldown:'60',Rating_R:'4',Rating_A:'5',Rating_E:'3',Rating_C:'',Notes:'',LastMade:'2026-03-04'},
+];
+</script>
+</body>
+</html>
