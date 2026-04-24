@@ -50,6 +50,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .cal-cell:hover{background:#f9f9f7}
 .cal-cell:hover .cal-add-btn{opacity:1}
 .cal-add-btn{opacity:0;font-size:10px;color:#1a6bc4;background:none;border:none;cursor:pointer;padding:0;transition:opacity 0.1s}
+.cal-act-btn{opacity:0;font-size:10px;color:#888;background:none;border:1px solid #ddd;border-radius:4px;cursor:pointer;padding:1px 4px;transition:opacity 0.1s;margin-left:3px;line-height:1.4}
+.cal-cell:hover .cal-act-btn{opacity:1}
+.cal-act-btn:hover{background:#f0f0eb;border-color:#bbb;color:#555}
 .cal-cell.other-month{background:#fafafa}
 .cal-cell.other-month .cal-date{color:#ccc}
 .cal-cell.today{background:#EEF6FF}
@@ -226,7 +229,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
           <button onclick="changeMonth(1)">›</button>
         </div>
       </div>
-      <div style="padding:0 16px 8px;font-size:11px;color:#aaa">💡 <b>Click</b> a date to plan a meal &nbsp;·&nbsp; <b>Right-click</b> to add a family activity</div>
+      <div style="padding:0 16px 8px;font-size:11px;color:#aaa">💡 <b>Click</b> a date to plan a meal &nbsp;·&nbsp; <b>Hover + click '＋ activity'</b> to add family schedules</div>
       <div class="cal-grid" id="cal-grid"></div>
     </div>
 
@@ -652,7 +655,18 @@ function makeCalCell(date,other){
   const dk=dateKey(date), isToday=dk===dateKey(TODAY);
   const cell=document.createElement('div');
   cell.className='cal-cell'+(other?' other-month':'')+(isToday?' today':'');
-  const dateDiv=document.createElement('div');dateDiv.className='cal-date';dateDiv.textContent=date.getDate();cell.appendChild(dateDiv);
+
+  // Header row: date number + activity button
+  const headerRow=document.createElement('div');
+  headerRow.style.cssText='display:flex;align-items:center;justify-content:space-between;margin-bottom:3px';
+  const dateDiv=document.createElement('div');dateDiv.className='cal-date';dateDiv.style.margin='0';dateDiv.textContent=date.getDate();
+  const actBtn=document.createElement('button');
+  actBtn.className='cal-act-btn';actBtn.textContent='＋ activity';actBtn.title='Add family activity';
+  actBtn.onclick=(e)=>{e.stopPropagation();openAct(dk);};
+  headerRow.appendChild(dateDiv);headerRow.appendChild(actBtn);
+  cell.appendChild(headerRow);
+
+  // Day note chip
   const note=dayNotes[dk]||'';
   if(note){
     const chip=document.createElement('div');
@@ -660,13 +674,23 @@ function makeCalCell(date,other){
     chip.className='cal-chip '+(nl.includes('hockey')?'chip-hockey':nl.includes('away')?'chip-away':'chip-note');
     chip.textContent=note; cell.appendChild(chip);
   }
+
+  // Meal chips
   (calEvents[dk]||[]).forEach(ev=>{
     const chip=document.createElement('div');chip.className='cal-chip chip-meal';chip.textContent=ev.title;cell.appendChild(chip);
   });
-  cell.onclick=()=>{ 
-    const dk2=dateKey(date);
-    openAssign(dk2);
-  };
+
+  // Activity chips
+  (activities[dk]||[]).forEach(act=>{
+    const chip=document.createElement('div');
+    const p=act.person.toLowerCase();
+    chip.className='cal-chip chip-'+(['ron','angela','ellen','claire'].includes(p)?p:'note');
+    chip.textContent=act.person+': '+act.activity;
+    cell.appendChild(chip);
+  });
+
+  // Click cell = assign meal
+  cell.onclick=()=>openAssign(dk);
   return cell;
 }
 
