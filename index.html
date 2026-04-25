@@ -176,6 +176,23 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .act-custom-add{padding:7px 14px;background:#1a1a1a;border:none;border-radius:8px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap}
 .act-cancel{width:100%;padding:10px;background:none;border:none;border-top:1px solid #e8e8e4;cursor:pointer;font-size:12px;color:#888}
 .act-cancel:hover{background:#f5f5f0}
+/* SUGGEST */
+.suggest-chip{padding:5px 12px;border-radius:20px;border:1px solid #ddd;background:#f5f5f0;color:#444;font-size:12px;cursor:pointer;transition:all 0.1s;white-space:nowrap}
+.suggest-chip:hover{background:#1a5c2e;color:#fff;border-color:#1a5c2e}
+.suggest-card{border:1px solid #e8e8e4;border-radius:12px;padding:12px 14px;margin-bottom:8px;background:#fff}
+.suggest-card-source{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px}
+.suggest-card-name{font-size:14px;font-weight:700;margin-bottom:3px}
+.suggest-card-desc{font-size:12px;color:#666;line-height:1.5;margin-bottom:6px}
+.suggest-card-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.suggest-card-badge{font-size:11px;padding:2px 8px;border-radius:10px;font-weight:600}
+.suggest-card-link{font-size:11px;color:#1a6bc4;text-decoration:none}
+.suggest-card-link:hover{text-decoration:underline}
+
+/* SETTINGS */
+.settings-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.35);z-index:400;display:none;align-items:center;justify-content:center;padding:16px}
+.settings-overlay.open{display:flex}
+.settings-box{background:#fff;border-radius:16px;padding:24px;width:440px;max-width:100%;box-shadow:0 8px 32px rgba(0,0,0,0.15);position:relative}
+
 /* LOADING */
 .loading{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;gap:12px;color:#888;font-size:13px}
 .spinner{width:24px;height:24px;border:2px solid #e8e8e4;border-top-color:#1a1a1a;border-radius:50%;animation:spin 0.7s linear infinite}
@@ -215,6 +232,8 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         </div>
         <button class="nav-btn" onclick="showScreen('list')">Meal List</button>
         <a class="nav-btn" href="https://calendar.google.com" target="_blank" style="text-decoration:none">📅 Google Cal</a>
+        <button class="nav-btn" onclick="openSuggest()" style="background:#1a5c2e;color:#fff;border-color:#1a5c2e;font-weight:600">✨ Suggest</button>
+        <button class="nav-btn" onclick="openSettings()" title="Settings" style="padding:5px 9px">⚙️</button>
         <img class="user-avatar" id="user-avatar" src="" alt="User" onclick="signOut()" title="Sign out">
       </div>
     </div>
@@ -354,6 +373,64 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <button class="act-custom-add" onclick="addCustomActivity()">Add</button>
     </div>
     <button class="act-cancel" onclick="closeAct()">Done</button>
+  </div>
+</div>
+
+<!-- SUGGEST OVERLAY -->
+<div class="overlay" id="suggest-overlay" onclick="maybeCloseSuggest(event)">
+  <div class="panel" style="width:600px;max-height:90vh">
+    <button class="panel-close" onclick="closeSuggest()">✕</button>
+    <div style="font-size:17px;font-weight:700;margin-bottom:4px">✨ Meal Suggestions</div>
+    <div style="font-size:12px;color:#888;margin-bottom:14px">Searches your meal list &amp; top-rated internet recipes</div>
+    <div style="display:flex;gap:8px;margin-bottom:10px">
+      <input id="suggest-input" type="text"
+        placeholder="What are you in the mood for? e.g. salad, quick chicken, cozy soup..."
+        style="flex:1;padding:10px 13px;border:1px solid #ddd;border-radius:10px;font-size:13px;font-family:inherit"
+        onkeydown="if(event.key==='Enter')runSuggest()">
+      <button onclick="runSuggest()" id="suggest-go-btn"
+        style="padding:10px 18px;background:#1a5c2e;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap">
+        Find meals
+      </button>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">
+      <button class="suggest-chip" onclick="quickSuggest('salad')">🥗 Salad</button>
+      <button class="suggest-chip" onclick="quickSuggest('quick chicken weeknight')">🍗 Quick Chicken</button>
+      <button class="suggest-chip" onclick="quickSuggest('cozy soup')">🍲 Soup</button>
+      <button class="suggest-chip" onclick="quickSuggest('pasta')">🍝 Pasta</button>
+      <button class="suggest-chip" onclick="quickSuggest('fish')">🐟 Fish</button>
+      <button class="suggest-chip" onclick="quickSuggest('vegetarian')">🥦 Vegetarian</button>
+      <button class="suggest-chip" onclick="quickSuggest('30 minute meal')">⚡ 30 Min</button>
+      <button class="suggest-chip" onclick="quickSuggest('something we have not made in a while')">🔄 Not Recently Made</button>
+    </div>
+    <div id="suggest-results" style="display:none;border-top:1px solid #e8e8e4;padding-top:12px;max-height:55vh;overflow-y:auto">
+      <div id="suggest-results-inner"></div>
+    </div>
+    <div id="suggest-loading" style="display:none;text-align:center;padding:32px;color:#888">
+      <div style="font-size:28px;margin-bottom:10px">🤔</div>
+      <div style="font-size:13px" id="suggest-loading-text">Searching your cookbooks and the internet...</div>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS OVERLAY -->
+<div class="settings-overlay" id="settings-overlay" onclick="maybeCloseSettings(event)">
+  <div class="settings-box">
+    <button class="panel-close" onclick="closeSettings()">✕</button>
+    <div style="font-size:16px;font-weight:700;margin-bottom:6px">⚙️ Settings</div>
+    <div style="font-size:12px;color:#888;margin-bottom:18px">Configure your meal planner preferences</div>
+
+    <div style="margin-bottom:16px">
+      <div style="font-size:11px;font-weight:700;color:#555;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:6px">Anthropic API Key <span style="font-weight:400;color:#aaa;text-transform:none">(for ✨ Suggest feature)</span></div>
+      <input id="settings-apikey" type="password"
+        style="width:100%;padding:9px 12px;border:1px solid #ddd;border-radius:8px;font-size:13px;font-family:monospace;margin-bottom:6px"
+        placeholder="sk-ant-...">
+      <div style="font-size:11px;color:#aaa;line-height:1.5">Get a free key at <a href="https://console.anthropic.com" target="_blank" style="color:#1a6bc4">console.anthropic.com</a>. Stored only in your browser — never sent anywhere except directly to Anthropic.</div>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button onclick="saveSettings()" style="flex:1;padding:9px;background:#1a1a1a;border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:600;cursor:pointer">Save</button>
+      <button onclick="closeSettings()" style="flex:1;padding:9px;background:#f0f0eb;border:none;border-radius:8px;color:#666;font-size:13px;cursor:pointer">Cancel</button>
+    </div>
   </div>
 </div>
 
@@ -1116,3 +1193,178 @@ const DEFAULT_MEALS = [
 </script>
 </body>
 </html>
+<script>
+// ── SETTINGS ──────────────────────────────────────────────────────────────────
+function openSettings(){
+  document.getElementById('settings-apikey').value=localStorage.getItem('mp_apikey')||'';
+  document.getElementById('settings-overlay').classList.add('open');
+}
+function closeSettings(){document.getElementById('settings-overlay').classList.remove('open');}
+function maybeCloseSettings(e){if(e.target===document.getElementById('settings-overlay'))closeSettings();}
+function saveSettings(){
+  const key=document.getElementById('settings-apikey').value.trim();
+  if(key) localStorage.setItem('mp_apikey',key);
+  else localStorage.removeItem('mp_apikey');
+  closeSettings();
+  showToast(key?'✅ API key saved!':'API key cleared');
+}
+
+// ── SUGGEST ───────────────────────────────────────────────────────────────────
+function openSuggest(){
+  const key=localStorage.getItem('mp_apikey');
+  if(!key){
+    openSettings();
+    showToast('Enter your Anthropic API key first!',3500);
+    return;
+  }
+  document.getElementById('suggest-overlay').classList.add('open');
+  document.getElementById('suggest-results').style.display='none';
+  document.getElementById('suggest-loading').style.display='none';
+  document.getElementById('suggest-input').value='';
+  setTimeout(()=>document.getElementById('suggest-input').focus(),80);
+}
+function closeSuggest(){document.getElementById('suggest-overlay').classList.remove('open');}
+function maybeCloseSuggest(e){if(e.target===document.getElementById('suggest-overlay'))closeSuggest();}
+function quickSuggest(q){document.getElementById('suggest-input').value=q;runSuggest();}
+
+function getMealsSummary(){
+  return meals.map(m=>{
+    const ratings=[];
+    if(m.Rating_R) ratings.push('Ron:'+m.Rating_R);
+    if(m.Rating_A) ratings.push('Angela:'+m.Rating_A);
+    if(m.Rating_E) ratings.push('Ellen:'+m.Rating_E);
+    if(m.Rating_C) ratings.push('Claire:'+m.Rating_C);
+    const src=m.Source?'['+m.Source+']':'';
+    const last=m.LastMade?'last:'+m.LastMade:'never made';
+    return `- ${m.Name} ${src} | ${(m.Tags||'none')} | ${ratings.join(',')||'unrated'} | ${last}`;
+  }).join('\n');
+}
+
+async function runSuggest(){
+  const key=localStorage.getItem('mp_apikey');
+  if(!key){openSettings();showToast('Enter your Anthropic API key first!',3500);return;}
+  const query=document.getElementById('suggest-input').value.trim();
+  if(!query){showToast('Tell me what you are in the mood for!');return;}
+
+  document.getElementById('suggest-results').style.display='none';
+  document.getElementById('suggest-loading').style.display='block';
+  const loadMsgs=['Searching your cookbooks...','Checking your meal history...','Finding top-rated recipes...','Almost ready...'];
+  let li=0;
+  const loadInt=setInterval(()=>{
+    document.getElementById('suggest-loading-text').textContent=loadMsgs[Math.min(li++,loadMsgs.length-1)];
+  },1800);
+
+  const btn=document.getElementById('suggest-go-btn');
+  btn.disabled=true;btn.textContent='Searching...';
+
+  const prompt=`You are a helpful family meal planner. A family wants meal suggestions.
+
+Request: "${query}"
+
+THEIR MEAL LIST:
+${getMealsSummary()}
+
+COOKBOOK LEGEND:
+BB=Blue Binder (personal recipes), D:ALS="Dinner: A Love Story", CL:5="Cooking Light 5-Ingredient", FN TLC="Food Network Turkey Lovers", FG="Forking Good", KCC=KCC Cookbook
+
+TASK: Suggest exactly 10 meals. Mix:
+- 4-5 from their list above (prefer ones never made or not made recently, that match the request)
+- 4-5 from the internet: only real well-known recipes with 4.5+ stars and 500+ ratings on AllRecipes, Food Network, NYT Cooking, Smitten Kitchen, etc.
+
+Return ONLY valid JSON with no markdown fences:
+{"suggestions":[{"name":"Recipe name","source_type":"own_list or internet","source":"BB or D:ALS p.14 or allrecipes.com etc","description":"1-2 sentence enticing description","why":"why this fits the request","url":null,"rating_note":null}]}
+
+For internet recipes, url must be a real working URL and rating_note should be like "4.8/5 (2,400+ ratings)".`;
+
+  try{
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key':key,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body:JSON.stringify({
+        model:'claude-sonnet-4-6',
+        max_tokens:4000,
+        messages:[{role:'user',content:prompt}]
+      })
+    });
+    clearInterval(loadInt);
+
+    if(!resp.ok){
+      const err=await resp.json().catch(()=>({}));
+      const msg=err?.error?.message||('API error '+resp.status);
+      if(resp.status===401) throw new Error('Invalid API key — check Settings ⚙️');
+      throw new Error(msg);
+    }
+
+    const data=await resp.json();
+    let text='';
+    for(const block of (data.content||[])){
+      if(block.type==='text') text+=block.text;
+    }
+
+    // Strip markdown fences if present
+    const clean=text.replace(/```json\s*|```\s*/g,'').trim();
+    const jsonMatch=clean.match(/\{[\s\S]*"suggestions"[\s\S]*\}/);
+    if(!jsonMatch) throw new Error('Unexpected response — try again');
+
+    const parsed=JSON.parse(jsonMatch[0]);
+    renderSuggestions(parsed.suggestions||[], query);
+
+  }catch(err){
+    clearInterval(loadInt);
+    document.getElementById('suggest-loading').style.display='none';
+    const inner=document.getElementById('suggest-results-inner');
+    inner.innerHTML=`<div style="text-align:center;padding:24px;color:#c62828;font-size:13px">⚠️ ${err.message}</div>`;
+    document.getElementById('suggest-results').style.display='block';
+  }finally{
+    btn.disabled=false;btn.textContent='Find meals';
+  }
+}
+
+function renderSuggestions(suggestions, query){
+  document.getElementById('suggest-loading').style.display='none';
+  const inner=document.getElementById('suggest-results-inner');
+  inner.innerHTML='';
+
+  if(!suggestions.length){
+    inner.innerHTML='<div style="text-align:center;padding:24px;color:#888;font-size:13px">No suggestions found — try a different search!</div>';
+    document.getElementById('suggest-results').style.display='block';
+    return;
+  }
+
+  const ownCount=suggestions.filter(s=>s.source_type==='own_list').length;
+  const webCount=suggestions.length-ownCount;
+  const hdr=document.createElement('div');
+  hdr.style.cssText='font-size:12px;color:#888;margin-bottom:10px';
+  hdr.textContent=suggestions.length+' suggestions for "'+query+'" — '+ownCount+' from your cookbooks, '+webCount+' from the internet';
+  inner.appendChild(hdr);
+
+  suggestions.forEach((s,i)=>{
+    const isOwn=s.source_type==='own_list';
+    const card=document.createElement('div');
+    card.className='suggest-card';
+
+    const srcColor=isOwn?'#1a5c2e':'#1a4bc4';
+    const srcBg=isOwn?'#E8F5E2':'#EEF3FF';
+    const srcLabel=isOwn?('📗 '+s.source):'🌐 Internet';
+
+    let metaHTML='';
+    if(s.rating_note) metaHTML+=`<span class="suggest-card-badge" style="background:#FFF8E1;color:#F57F17">⭐ ${s.rating_note}</span>`;
+    if(s.url) metaHTML+=`<a class="suggest-card-link" href="${s.url}" target="_blank">View recipe →</a>`;
+
+    card.innerHTML=`
+      <div class="suggest-card-source" style="color:${srcColor}">${srcLabel}</div>
+      <div class="suggest-card-name">${i+1}. ${s.name}</div>
+      <div class="suggest-card-desc">${s.description}</div>
+      <div style="font-size:11px;color:#888;font-style:italic;margin-bottom:6px">${s.why}</div>
+      <div class="suggest-card-meta">${metaHTML}</div>`;
+    inner.appendChild(card);
+  });
+
+  document.getElementById('suggest-results').style.display='block';
+}
+</script>
