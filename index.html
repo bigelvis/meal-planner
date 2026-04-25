@@ -56,7 +56,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .cal-cell.today .cal-date{color:#1a6bc4;font-weight:700}
 .cal-date{font-size:12px;color:#999;margin-bottom:3px}
 .cal-chip{font-size:9px;border-radius:4px;padding:2px 5px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.4}
-.chip-meal{background:#E8F0FE;color:#1a6bc4}
+
 .chip-hockey{background:#FFF3E0;color:#E65100}
 .chip-away{background:#FFEBEE;color:#C62828}
 .chip-note{background:#E8F5E9;color:#2E7D32}
@@ -147,6 +147,35 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .note-save{flex:1;padding:8px;background:#1a1a1a;border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:600;cursor:pointer}
 .note-cancel{flex:1;padding:8px;background:#f0f0eb;border:none;border-radius:8px;color:#666;font-size:13px;cursor:pointer}
 
+.chip-meal{background:#1a5c2e;color:#ffffff}
+.chip-ron{background:#DBEAFE;color:#1e40af}
+.chip-angela{background:#D1FAE5;color:#065f46}
+.chip-ellen{background:#FEF3C7;color:#92400e}
+.chip-claire{background:#EDE9FE;color:#5b21b6}
+.cal-act-btn{opacity:0;font-size:10px;color:#888;background:none;border:1px solid #ddd;border-radius:4px;cursor:pointer;padding:1px 4px;transition:opacity 0.1s;margin-left:3px;line-height:1.4}
+.cal-cell:hover .cal-act-btn{opacity:1}
+.cal-act-btn:hover{background:#f0f0eb;border-color:#bbb;color:#555}
+.act-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.25);z-index:300;display:none;align-items:flex-start;justify-content:center;padding-top:80px}
+.act-overlay.open{display:flex}
+.act-box{background:#fff;border-radius:14px;width:460px;max-width:95vw;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.15)}
+.act-header{padding:14px 16px 10px;border-bottom:1px solid #e8e8e4}
+.act-header h3{font-size:14px;font-weight:700;margin-bottom:10px}
+.act-existing{margin-bottom:8px;display:flex;flex-direction:column;gap:4px}
+.act-existing-row{display:flex;align-items:center;justify-content:space-between;padding:5px 8px;border-radius:8px;font-size:12px;font-weight:600}
+.act-existing-del{font-size:16px;cursor:pointer;opacity:0.6;padding-left:8px;line-height:1}
+.act-existing-del:hover{opacity:1}
+.act-quick{padding:12px 16px;border-bottom:1px solid #e8e8e4}
+.act-quick-label{font-size:10px;color:#888;text-transform:uppercase;letter-spacing:0.06em;font-weight:700;margin-bottom:8px}
+.act-quick-btns{display:flex;flex-wrap:wrap;gap:6px}
+.act-quick-btn{padding:5px 11px;border-radius:20px;border:none;cursor:pointer;font-size:12px;font-weight:600;transition:opacity 0.1s}
+.act-quick-btn:hover{opacity:0.8}
+.act-custom{padding:12px 16px;display:flex;gap:8px;align-items:center}
+.act-custom select{flex:0 0 auto;padding:7px 10px;border:1px solid #ddd;border-radius:8px;font-size:12px;background:#fff;color:#1a1a1a}
+.act-custom input{flex:1;padding:7px 10px;border:1px solid #ddd;border-radius:8px;font-size:12px;font-family:inherit}
+.act-custom input:focus{outline:none;border-color:#999}
+.act-custom-add{padding:7px 14px;background:#1a1a1a;border:none;border-radius:8px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap}
+.act-cancel{width:100%;padding:10px;background:none;border:none;border-top:1px solid #e8e8e4;cursor:pointer;font-size:12px;color:#888}
+.act-cancel:hover{background:#f5f5f0}
 /* LOADING */
 .loading{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px;gap:12px;color:#888;font-size:13px}
 .spinner{width:24px;height:24px;border:2px solid #e8e8e4;border-top-color:#1a1a1a;border-radius:50%;animation:spin 0.7s linear infinite}
@@ -299,6 +328,32 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <button class="note-save" onclick="saveNote()">Save</button>
       <button class="note-cancel" onclick="closeNote()">Cancel</button>
     </div>
+  </div>
+</div>
+
+<!-- ACTIVITY OVERLAY -->
+<div class="act-overlay" id="act-overlay" onclick="maybeCloseAct(event)">
+  <div class="act-box">
+    <div class="act-header">
+      <h3 id="act-date-label">Activities</h3>
+      <div class="act-existing" id="act-existing"></div>
+    </div>
+    <div class="act-quick">
+      <div class="act-quick-label">Quick add</div>
+      <div class="act-quick-btns" id="act-quick-btns"></div>
+    </div>
+    <div class="act-custom">
+      <select id="act-person">
+        <option value="Ron">Ron</option>
+        <option value="Angela">Angela</option>
+        <option value="Ellen">Ellen</option>
+        <option value="Claire">Claire</option>
+        <option value="Family">Family</option>
+      </select>
+      <input id="act-custom-input" type="text" placeholder="Custom activity...">
+      <button class="act-custom-add" onclick="addCustomActivity()">Add</button>
+    </div>
+    <button class="act-cancel" onclick="closeAct()">Done</button>
   </div>
 </div>
 
@@ -557,7 +612,7 @@ async function removeCalendarEvent(dk, eventId){
 
 async function loadAll(){
   setSyncStatus('syncing');
-  await Promise.all([loadMeals(), loadCalendarEvents()]);
+  await Promise.all([loadMeals(), loadCalendarEvents(), loadActivities()]);
   setSyncStatus('synced');
   setTimeout(()=>setSyncStatus(''),3000);
   renderCalendar();
@@ -597,21 +652,42 @@ function makeCalCell(date,other){
   const dk=dateKey(date), isToday=dk===dateKey(TODAY);
   const cell=document.createElement('div');
   cell.className='cal-cell'+(other?' other-month':'')+(isToday?' today':'');
-  const dateDiv=document.createElement('div');dateDiv.className='cal-date';dateDiv.textContent=date.getDate();cell.appendChild(dateDiv);
+
+  // Header row: date number + activity button
+  const headerRow=document.createElement('div');
+  headerRow.style.cssText='display:flex;align-items:center;justify-content:space-between;margin-bottom:3px';
+  const dateDiv=document.createElement('div');
+  dateDiv.className='cal-date';dateDiv.style.margin='0';dateDiv.textContent=date.getDate();
+  const actBtn=document.createElement('button');
+  actBtn.className='cal-act-btn';actBtn.textContent='+ activity';actBtn.title='Add family activity';
+  actBtn.onclick=(e)=>{e.stopPropagation();openAct(dk);};
+  headerRow.appendChild(dateDiv);headerRow.appendChild(actBtn);
+  cell.appendChild(headerRow);
+
+  // Day note chip
   const note=dayNotes[dk]||'';
   if(note){
     const chip=document.createElement('div');
     const nl=note.toLowerCase();
     chip.className='cal-chip '+(nl.includes('hockey')?'chip-hockey':nl.includes('away')?'chip-away':'chip-note');
-    chip.textContent=note; cell.appendChild(chip);
+    chip.textContent=note;cell.appendChild(chip);
   }
+
+  // Meal chips
   (calEvents[dk]||[]).forEach(ev=>{
     const chip=document.createElement('div');chip.className='cal-chip chip-meal';chip.textContent=ev.title;cell.appendChild(chip);
   });
-  cell.onclick=()=>{ 
-    const dk2=dateKey(date);
-    openAssign(dk2);
-  };
+
+  // Activity chips
+  (activities[dk]||[]).forEach(act=>{
+    const chip=document.createElement('div');
+    const p=act.person.toLowerCase();
+    chip.className='cal-chip chip-'+(['ron','angela','ellen','claire'].includes(p)?p:'note');
+    chip.textContent=act.person+': '+act.activity;
+    cell.appendChild(chip);
+  });
+
+  cell.onclick=()=>openAssign(dk);
   return cell;
 }
 
@@ -867,6 +943,140 @@ function saveNote(){
 function closeNote(){document.getElementById('note-overlay').classList.remove('open');}
 function maybeCloseNote(e){if(e.target===document.getElementById('note-overlay'))closeNote();}
 document.getElementById('note-input').addEventListener('keydown',e=>{if(e.key==='Enter')saveNote();});
+
+// ── ACTIVITIES ───────────────────────────────────────────────────────────────
+const ACT_SHEET = 'Activities';
+
+const QUICK_ACTS = [
+  {person:'Ron',    activity:'Hockey',    label:'Ron 🏒'},
+  {person:'Ron',    activity:'Away',      label:'Ron Away ✈️'},
+  {person:'Ron',    activity:'Travel',    label:'Ron Travel'},
+  {person:'Angela', activity:'Book Club', label:'Book Club 📚'},
+  {person:'Ellen',  activity:'Hockey',    label:'Ellen 🏒'},
+  {person:'Ellen',  activity:'Away',      label:'Ellen Away'},
+  {person:'Claire', activity:'Hockey',    label:'Claire 🏒'},
+  {person:'Claire', activity:'Travel',    label:'Claire Travel'},
+  {person:'Family', activity:'Dinner Out',label:'Dinner Out 🍽️'},
+];
+
+const PERSON_COLORS = {
+  ron:    {bg:'#DBEAFE',color:'#1e40af'},
+  angela: {bg:'#D1FAE5',color:'#065f46'},
+  ellen:  {bg:'#FEF3C7',color:'#92400e'},
+  claire: {bg:'#EDE9FE',color:'#5b21b6'},
+  family: {bg:'#F3F4F6',color:'#374151'},
+};
+
+async function loadActivities(){
+  activities={};
+  try{
+    const data=await sheetsGet(ACT_SHEET+'!A2:D500');
+    if(!data.values)return;
+    data.values.forEach((row,i)=>{
+      const [date,person,activity,note]=row;
+      if(!date||!person||!activity)return;
+      if(!activities[date])activities[date]=[];
+      activities[date].push({rowIndex:i+2,person,activity,note:note||''});
+    });
+  }catch(e){console.error('loadActivities',e);}
+}
+
+async function saveActivity(dk,person,activity,note=''){
+  setSyncStatus('syncing');
+  try{
+    const rows=[[dk,person,activity,note]];
+    const url=`https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/${encodeURIComponent(ACT_SHEET+'!A:D')}:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`;
+    const r=await fetch(url,{method:'POST',headers:{Authorization:'Bearer '+accessToken,'Content-Type':'application/json'},body:JSON.stringify({values:rows})});
+    if(!r.ok) throw new Error('Append failed '+r.status);
+    await loadActivities();
+    setSyncStatus('synced');
+    setTimeout(()=>setSyncStatus(''),3000);
+    showToast('✅ '+person+' '+activity+' added!');
+  }catch(e){console.error('saveActivity',e);setSyncStatus('error');showToast('Error saving activity');}
+}
+
+async function deleteActivity(dk,rowIndex){
+  setSyncStatus('syncing');
+  try{
+    const url=`https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/${encodeURIComponent(ACT_SHEET+'!A'+rowIndex+':D'+rowIndex)}?valueInputOption=RAW`;
+    await fetch(url,{method:'PUT',headers:{Authorization:'Bearer '+accessToken,'Content-Type':'application/json'},body:JSON.stringify({values:[['','','','']]})});
+    await loadActivities();
+    setSyncStatus('synced');
+    setTimeout(()=>setSyncStatus(''),3000);
+    showToast('Activity removed');
+  }catch(e){console.error('deleteActivity',e);setSyncStatus('error');showToast('Error removing activity');}
+}
+
+let actDateKey=null;
+
+function openAct(dk){
+  actDateKey=dk;
+  const d=parseDate(dk);
+  document.getElementById('act-date-label').textContent=fmtDate(d)+' — Activities';
+  document.getElementById('act-custom-input').value='';
+  renderActOverlay();
+  document.getElementById('act-overlay').classList.add('open');
+}
+
+function renderActOverlay(){
+  const dk=actDateKey;
+  const existing=activities[dk]||[];
+  const existingDiv=document.getElementById('act-existing');
+  existingDiv.innerHTML='';
+  existing.forEach(act=>{
+    const p=act.person.toLowerCase();
+    const colors=PERSON_COLORS[p]||PERSON_COLORS.family;
+    const row=document.createElement('div');
+    row.className='act-existing-row';
+    row.style.cssText='background:'+colors.bg+';color:'+colors.color;
+    const label=document.createElement('span');
+    label.textContent=act.person+': '+act.activity+(act.note?' ('+act.note+')':'');
+    const del=document.createElement('span');
+    del.className='act-existing-del';del.textContent='×';del.title='Remove';
+    del.onclick=async()=>{
+      if(!confirm('Remove this activity?'))return;
+      await deleteActivity(dk,act.rowIndex);
+      renderActOverlay();
+      renderCalendar();
+    };
+    row.appendChild(label);row.appendChild(del);
+    existingDiv.appendChild(row);
+  });
+
+  const btns=document.getElementById('act-quick-btns');
+  btns.innerHTML='';
+  QUICK_ACTS.forEach(qa=>{
+    const alreadyAdded=existing.some(a=>a.person===qa.person&&a.activity===qa.activity);
+    const btn=document.createElement('button');
+    btn.className='act-quick-btn';
+    const p=qa.person.toLowerCase();
+    const colors=PERSON_COLORS[p]||PERSON_COLORS.family;
+    btn.style.cssText='background:'+colors.bg+';color:'+colors.color+(alreadyAdded?';opacity:0.35;cursor:default':'');
+    btn.textContent=qa.label;
+    if(!alreadyAdded){
+      btn.onclick=async()=>{
+        await saveActivity(actDateKey,qa.person,qa.activity);
+        renderActOverlay();
+        renderCalendar();
+      };
+    }
+    btns.appendChild(btn);
+  });
+}
+
+async function addCustomActivity(){
+  const person=document.getElementById('act-person').value;
+  const activity=document.getElementById('act-custom-input').value.trim();
+  if(!activity){showToast('Enter an activity first');return;}
+  await saveActivity(actDateKey,person,activity);
+  document.getElementById('act-custom-input').value='';
+  renderActOverlay();
+  renderCalendar();
+}
+
+function closeAct(){document.getElementById('act-overlay').classList.remove('open');}
+function maybeCloseAct(e){if(e.target===document.getElementById('act-overlay'))closeAct();}
+document.getElementById('act-custom-input').addEventListener('keydown',e=>{if(e.key==='Enter')addCustomActivity();});
 
 // ── DEFAULT MEALS DATA ────────────────────────────────────────────────────────
 const DEFAULT_MEALS = [
