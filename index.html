@@ -152,21 +152,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .spinner{width:24px;height:24px;border:2px solid #e8e8e4;border-top-color:#1a1a1a;border-radius:50%;animation:spin 0.7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 
-/* SUGGEST */
-.suggest-chip{padding:5px 12px;border-radius:20px;border:1px solid #ddd;background:#f5f5f0;color:#444;font-size:12px;cursor:pointer;transition:all 0.1s;white-space:nowrap}
-.suggest-chip:hover{background:#1a5c2e;color:#fff;border-color:#1a5c2e}
-.suggest-card{border:1px solid #e8e8e4;border-radius:12px;padding:12px 14px;margin-bottom:8px;background:#fff;transition:background 0.1s}
-.suggest-card:hover{background:#f9f9f7}
-.suggest-card-source{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px}
-.suggest-card-name{font-size:14px;font-weight:700;margin-bottom:3px}
-.suggest-card-desc{font-size:12px;color:#666;line-height:1.5;margin-bottom:6px}
-.suggest-card-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.suggest-card-badge{font-size:11px;padding:2px 8px;border-radius:10px;font-weight:600}
-.suggest-card-link{font-size:11px;color:#1a6bc4;text-decoration:none}
-.suggest-card-link:hover{text-decoration:underline}
-.suggest-add-btn{margin-left:auto;padding:4px 12px;background:#1a5c2e;color:#fff;border:none;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer}
-.suggest-add-btn:hover{background:#145224}
-
 /* TOAST */
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;padding:10px 20px;border-radius:10px;font-size:13px;font-weight:500;z-index:500;opacity:0;transition:opacity 0.2s;pointer-events:none}
 .toast.show{opacity:1}
@@ -200,7 +185,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
           <span id="sync-label">ready</span>
         </div>
         <button class="nav-btn" onclick="showScreen('list')">Meal List</button>
-        <button class="nav-btn" id="suggest-btn" onclick="openSuggest()" style="background:#1a5c2e;color:#fff;border-color:#1a5c2e">✨ Suggest</button>
         <a class="nav-btn" href="https://calendar.google.com" target="_blank" style="text-decoration:none">📅 Google Cal</a>
         <img class="user-avatar" id="user-avatar" src="" alt="User" onclick="signOut()" title="Sign out">
       </div>
@@ -298,6 +282,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 <!-- ASSIGN SEARCH -->
 <div class="search-overlay" id="search-overlay" onclick="maybeCloseSearch(event)">
   <div class="search-box">
+    <div id="search-existing" style="display:none;border-bottom:1px solid #e8e8e4;padding:8px 12px 6px"></div>
     <input id="search-input" placeholder='Search meals... "chili", "R:5", "hockey"' oninput="renderSearch()" autocomplete="off">
     <div class="search-results" id="search-results"></div>
     <button class="search-cancel" onclick="closeSearch()">Cancel</button>
@@ -313,43 +298,6 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <div class="note-actions">
       <button class="note-save" onclick="saveNote()">Save</button>
       <button class="note-cancel" onclick="closeNote()">Cancel</button>
-    </div>
-  </div>
-</div>
-
-<!-- SUGGEST OVERLAY -->
-<div class="overlay" id="suggest-overlay" onclick="maybeCloseSuggest(event)">
-  <div class="panel" style="width:580px;max-height:88vh">
-    <button class="panel-close" onclick="closeSuggest()">×</button>
-    <div style="font-size:17px;font-weight:700;margin-bottom:4px">✨ Meal Suggestions</div>
-    <div style="font-size:12px;color:#888;margin-bottom:14px">Searches your meal list &amp; the internet for top-rated recipes</div>
-    <div style="display:flex;gap:8px;margin-bottom:10px">
-      <input id="suggest-input" type="text" placeholder='What are you in the mood for? e.g. "salad", "quick chicken", "cozy soup"...'
-        style="flex:1;padding:10px 13px;border:1px solid #ddd;border-radius:10px;font-size:13px;font-family:inherit"
-        onkeydown="if(event.key==='Enter')runSuggest()">
-      <button onclick="runSuggest()" id="suggest-go-btn"
-        style="padding:10px 18px;background:#1a5c2e;color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap">
-        Find meals
-      </button>
-    </div>
-    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px" id="suggest-chips">
-      <button class="suggest-chip" onclick="quickSuggest('salad')">🥗 Salad</button>
-      <button class="suggest-chip" onclick="quickSuggest('quick chicken')">🍗 Quick Chicken</button>
-      <button class="suggest-chip" onclick="quickSuggest('cozy soup')">🍲 Soup</button>
-      <button class="suggest-chip" onclick="quickSuggest('pasta')">🍝 Pasta</button>
-      <button class="suggest-chip" onclick="quickSuggest('fish')">🐟 Fish</button>
-      <button class="suggest-chip" onclick="quickSuggest('vegetarian')">🥦 Vegetarian</button>
-      <button class="suggest-chip" onclick="quickSuggest('30 minute meal')">⚡ 30 Min</button>
-      <button class="suggest-chip" onclick="quickSuggest('something I haven&apos;t made in a while')">🔄 Haven&#39;t Made</button>
-    </div>
-    <div id="suggest-results" style="display:none">
-      <div style="border-top:1px solid #e8e8e4;padding-top:12px">
-        <div id="suggest-results-inner"></div>
-      </div>
-    </div>
-    <div id="suggest-loading" style="display:none;text-align:center;padding:32px;color:#888">
-      <div style="font-size:24px;margin-bottom:10px">🤔</div>
-      <div style="font-size:13px" id="suggest-loading-text">Searching your cookbooks and the internet...</div>
     </div>
   </div>
 </div>
@@ -388,6 +336,7 @@ let calMonth      = TODAY.getMonth();
 let weekBaseDate  = new Date(TODAY);
 let editingMealId = null;
 let assigningDateKey = null;
+let activities    = {};  // dateKey -> [{rowIndex, person, activity, note}]
 let editingNoteKey   = null;
 let currentRatings   = {rR:'',rA:'',rE:'',rC:''};
 
@@ -809,6 +758,40 @@ function closeDetail(){document.getElementById('detail-overlay').classList.remov
 function openAssign(dk){
   assigningDateKey=dk;
   document.getElementById('search-input').value='';
+
+  // Show existing meals for this date with remove option
+  const existing=calEvents[dk]||[];
+  const existingDiv=document.getElementById('search-existing');
+  if(existing.length){
+    existingDiv.style.display='block';
+    existingDiv.innerHTML='';
+    const label=document.createElement('div');
+    label.style.cssText='font-size:10px;color:#888;text-transform:uppercase;letter-spacing:0.06em;font-weight:700;margin-bottom:6px';
+    label.textContent='Already planned — click × to remove';
+    existingDiv.appendChild(label);
+    existing.forEach(ev=>{
+      const row=document.createElement('div');
+      row.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:5px 8px;background:#f0faf4;border:1px solid #c6e6d0;border-radius:8px;margin-bottom:4px';
+      const name=document.createElement('span');
+      name.style.cssText='font-size:13px;font-weight:600;color:#1a5c2e';
+      name.textContent=ev.title;
+      const del=document.createElement('button');
+      del.style.cssText='background:none;border:none;font-size:18px;color:#c62828;cursor:pointer;padding:0 2px;line-height:1';
+      del.textContent='×';del.title='Remove from this day';
+      del.onclick=async()=>{
+        if(!confirm('Remove "'+ev.title+'" from this day?'))return;
+        closeSearch();
+        await removeCalendarEvent(dk,ev.eventId);
+        renderCalendar();
+        showToast('Removed '+ev.title);
+      };
+      row.appendChild(name);row.appendChild(del);
+      existingDiv.appendChild(row);
+    });
+  } else {
+    existingDiv.style.display='none';
+  }
+
   renderSearch();
   document.getElementById('search-overlay').classList.add('open');
   setTimeout(()=>document.getElementById('search-input').focus(),80);
@@ -884,207 +867,6 @@ function saveNote(){
 function closeNote(){document.getElementById('note-overlay').classList.remove('open');}
 function maybeCloseNote(e){if(e.target===document.getElementById('note-overlay'))closeNote();}
 document.getElementById('note-input').addEventListener('keydown',e=>{if(e.key==='Enter')saveNote();});
-
-
-// ── MEAL SUGGESTER ────────────────────────────────────────────────────────────
-const COOKBOOK_LEGEND = {
-  'BB':     'Blue Binder (personal recipe collection)',
-  'D:ALS':  'Dinner: A Love Story (cookbook)',
-  'CL:5':   'Cooking Light: 5 Ingredient, 15 Minutes Cookbook',
-  'FN TLC': 'Food Network Turkey Lovers Cookbook',
-  'FG':     'Forking Good (cookbook)',
-  'KCC':    'KCC Cookbook',
-  'BB':     'Blue Binder',
-};
-
-function openSuggest(){
-  document.getElementById('suggest-overlay').classList.add('open');
-  document.getElementById('suggest-results').style.display='none';
-  document.getElementById('suggest-loading').style.display='none';
-  document.getElementById('suggest-input').value='';
-  setTimeout(()=>document.getElementById('suggest-input').focus(),80);
-}
-function closeSuggest(){document.getElementById('suggest-overlay').classList.remove('open');}
-function maybeCloseSuggest(e){if(e.target===document.getElementById('suggest-overlay'))closeSuggest();}
-function quickSuggest(q){document.getElementById('suggest-input').value=q;runSuggest();}
-
-function getMealsSummary(){
-  return meals.map(m=>{
-    const ratings=[];
-    if(m.Rating_R) ratings.push('Ron:'+m.Rating_R);
-    if(m.Rating_A) ratings.push('Angela:'+m.Rating_A);
-    if(m.Rating_E) ratings.push('Ellen:'+m.Rating_E);
-    if(m.Rating_C) ratings.push('Claire:'+m.Rating_C);
-    const lastMade=m.LastMade?'last made '+m.LastMade:'never made';
-    const src=m.Source?'['+m.Source+']':'';
-    return `- ${m.Name} ${src} | tags: ${m.Tags||'none'} | ratings: ${ratings.join(', ')||'unrated'} | ${lastMade}`;
-  }).join('\n');
-}
-
-async function runSuggest(){
-  const query=document.getElementById('suggest-input').value.trim();
-  if(!query){showToast("Tell me what you're in the mood for!");return;}
-
-  document.getElementById('suggest-results').style.display='none';
-  document.getElementById('suggest-loading').style.display='block';
-  const loadingTexts=[
-    'Searching your cookbooks...','Checking your meal history...','Scouring the internet for top-rated recipes...','Almost ready...'
-  ];
-  let li=0;
-  const loadingInterval=setInterval(()=>{
-    document.getElementById('suggest-loading-text').textContent=loadingTexts[Math.min(li++,loadingTexts.length-1)];
-  },1800);
-
-  const btn=document.getElementById('suggest-go-btn');
-  btn.disabled=true;btn.textContent='Searching...';
-
-  const mealsSummary=getMealsSummary();
-  const recentlyMade=meals.filter(m=>m.LastMade).sort((a,b)=>b.LastMade.localeCompare(a.LastMade)).slice(0,10).map(m=>m.Name).join(', ');
-
-  const prompt=`You are a helpful family meal planner assistant. A family is looking for meal suggestions.
-
-Their request: "${query}"
-
-FAMILY MEAL LIST (meals they already own/know):
-${mealsSummary}
-
-COOKBOOK LEGEND:
-- BB = Blue Binder (personal handwritten recipe collection)
-- D:ALS = "Dinner: A Love Story" cookbook (page numbers listed)
-- CL:5 = Cooking Light: 5 Ingredient, 15 Minutes Cookbook
-- FN TLC = Food Network Turkey Lovers Cookbook
-- FG = Forking Good cookbook
-- KCC = KCC Cookbook
-- Online URLs = internet recipes they have bookmarked
-
-Recently made: ${recentlyMade}
-
-YOUR TASK: Suggest exactly 10 meal options in this JSON format. Mix sources:
-- At least 4-5 from their existing meal list above (prioritize ones not made recently, or never made)
-- At least 3-4 from the internet: only suggest real, well-known recipes that would realistically have 4.5-5 stars and 500+ ratings on sites like AllRecipes, Food Network, NYT Cooking, Smitten Kitchen, or similar
-
-Return ONLY valid JSON, no markdown, no explanation:
-{
-  "suggestions": [
-    {
-      "name": "Recipe name",
-      "source_type": "own_list" or "internet",
-      "source": "BB" or "D:ALS p.14" or "allrecipes.com" etc,
-      "description": "1-2 sentence enticing description",
-      "why": "1 sentence why this fits their request",
-      "url": null or "https://...",
-      "rating_note": null or "★★★★★ 4.8/5 (2,400+ ratings)" for internet recipes,
-      "tags": ["quick","chicken","etc"]
-    }
-  ]
-}`;
-
-  try{
-    const resp=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{
-        'Content-Type':'application/json',
-        'anthropic-version':'2023-06-01',
-        'anthropic-dangerous-direct-browser-access':'true'
-      },
-      body:JSON.stringify({
-        model:'claude-sonnet-4-6',
-        max_tokens:4000,
-        messages:[{role:'user',content:prompt}]
-      })
-    });
-    clearInterval(loadingInterval);
-
-    if(!resp.ok){
-      const errData=await resp.json().catch(()=>({}));
-      const errMsg=errData?.error?.message||('API error '+resp.status);
-      throw new Error(errMsg);
-    }
-
-    const data=await resp.json();
-
-    // Extract text content
-    let text='';
-    for(const block of (data.content||[])){
-      if(block.type==='text') text+=block.text;
-    }
-
-    // Parse JSON — handle markdown code fences if present
-    let suggestions=[];
-    const clean=text.replace(/```json|```/g,'').trim();
-    // Try to find JSON object in the response
-    const jsonMatch=clean.match(/\{[\s\S]*"suggestions"[\s\S]*\}/);
-    if(jsonMatch){
-      try{
-        const parsed=JSON.parse(jsonMatch[0]);
-        suggestions=parsed.suggestions||[];
-      }catch(parseErr){
-        console.error('JSON parse error:',parseErr,'Raw:',jsonMatch[0].slice(0,200));
-        throw new Error('Could not parse suggestions — try again');
-      }
-    } else {
-      console.error('No JSON found in response. Raw text:', text.slice(0,500));
-      throw new Error('Unexpected response format — try again');
-    }
-
-    renderSuggestions(suggestions, query);
-  }catch(err){
-    clearInterval(loadingInterval);
-    console.error('Suggest error:',err);
-    const errDiv=document.getElementById('suggest-results-inner');
-    errDiv.innerHTML=`<div style="text-align:center;padding:24px;color:#c62828;font-size:13px">⚠️ ${err.message}</div>`;
-    document.getElementById('suggest-results').style.display='block';
-    document.getElementById('suggest-loading').style.display='none';
-  }finally{
-    btn.disabled=false;btn.textContent='Find meals';
-  }
-}
-
-function renderSuggestions(suggestions, query){
-  document.getElementById('suggest-loading').style.display='none';
-  const container=document.getElementById('suggest-results-inner');
-  container.innerHTML='';
-
-  if(!suggestions.length){
-    container.innerHTML='<div style="text-align:center;padding:24px;color:#888;font-size:13px">No suggestions found — try a different search!</div>';
-    document.getElementById('suggest-results').style.display='block';
-    return;
-  }
-
-  const header=document.createElement('div');
-  header.style.cssText='font-size:12px;color:#888;margin-bottom:10px';
-  const ownCount=suggestions.filter(s=>s.source_type==='own_list').length;
-  const webCount=suggestions.length-ownCount;
-  header.textContent=`${suggestions.length} suggestions for "${query}" — ${ownCount} from your cookbooks, ${webCount} from the internet`;
-  container.appendChild(header);
-
-  suggestions.forEach((s,i)=>{
-    const isOwn=s.source_type==='own_list';
-    const card=document.createElement('div');
-    card.className='suggest-card';
-
-    const sourceColor=isOwn?'#1a5c2e':'#1a4bc4';
-    const sourceBg=isOwn?'#E8F5E2':'#EEF3FF';
-    const sourceLabel=isOwn?('📗 '+s.source):'🌐 Internet';
-
-    card.innerHTML=`
-      <div class="suggest-card-source" style="color:${sourceColor}">${sourceLabel}</div>
-      <div class="suggest-card-name">${i+1}. ${s.name}</div>
-      <div class="suggest-card-desc">${s.description}</div>
-      <div style="font-size:11px;color:#888;font-style:italic;margin-bottom:6px">${s.why}</div>
-      <div class="suggest-card-meta">
-        ${s.rating_note?`<span class="suggest-card-badge" style="background:#FFF8E1;color:#F57F17">${s.rating_note}</span>`:''}
-        ${s.url?`<a class="suggest-card-link" href="${s.url}" target="_blank">View recipe →</a>`:''}
-        ${(s.tags||[]).map(t=>`<span style="font-size:10px;background:#f0f0eb;color:#666;padding:1px 6px;border-radius:8px">${t}</span>`).join('')}
-      </div>
-    `;
-    container.appendChild(card);
-  });
-
-  document.getElementById('suggest-results').style.display='block';
-  // Scroll results into view
-  container.scrollIntoView({behavior:'smooth',block:'nearest'});
-}
 
 // ── DEFAULT MEALS DATA ────────────────────────────────────────────────────────
 const DEFAULT_MEALS = [
