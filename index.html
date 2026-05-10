@@ -62,21 +62,21 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .chip-note{background:#E8F5E9;color:#2E7D32}
 
 /* WEEK VIEW */
-.week-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px}
-.week-label{font-size:17px;font-weight:700}
-.week-grid{margin:0 16px 16px;border:1px solid #e8e8e4;border-radius:12px;overflow:hidden}
-.week-row{display:grid;grid-template-columns:64px 1fr;border-bottom:1px solid #e8e8e4}
-.week-row:last-child{border-bottom:none}
-.week-row.week-row-today{background:#EEF6FF}
-.week-day-label{padding:10px 10px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:2px;background:#f5f5f0;border-right:1px solid #e8e8e4;min-height:70px}
-.week-dow{font-size:10px;font-weight:700;color:#888;letter-spacing:0.06em;text-transform:uppercase}
-.week-date-num{font-size:20px;font-weight:700;color:#1a1a1a;line-height:1}
-.week-row-today .week-date-num{color:#1a6bc4}
-.week-cell{padding:8px 10px;cursor:pointer;min-height:70px;display:flex;flex-direction:column;gap:3px;transition:background 0.1s}
-.week-cell:hover{background:#f9f9f7}
-.week-cell:hover .week-add-hint{opacity:1}
-.week-add-hint{font-size:10px;color:#bbb;opacity:0;transition:opacity 0.15s;margin-top:auto;padding-top:4px}
-.week-chip{font-size:11px;border-radius:5px;padding:3px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.5;max-width:100%}
+.week-outer{display:none;flex-direction:column;margin:0 16px 16px;border:1px solid #e8e8e4;border-radius:12px;overflow:hidden}
+.week-col-header{display:grid;border-bottom:2px solid #e8e8e4;background:#f5f5f0}
+.week-col-header-cell{padding:10px 8px 8px;text-align:center;border-right:1px solid #e8e8e4}
+.week-col-header-cell:last-child{border-right:none}
+.week-col-dow{font-size:10px;font-weight:700;color:#888;letter-spacing:0.06em;text-transform:uppercase;margin-bottom:4px}
+.week-col-datenum{font-size:22px;font-weight:700;color:#1a1a1a;line-height:1;width:36px;height:36px;display:flex;align-items:center;justify-content:center;border-radius:50%;margin:0 auto}
+.week-col-datenum.today{background:#1a6bc4;color:#fff}
+.week-col-dow.today{color:#1a6bc4}
+.week-body{display:grid;min-height:200px}
+.week-body-col{border-right:1px solid #e8e8e4;padding:8px 6px;cursor:pointer;min-height:160px;display:flex;flex-direction:column;gap:4px;transition:background 0.1s}
+.week-body-col:last-child{border-right:none}
+.week-body-col:hover{background:#f9f9f7}
+.week-body-col:hover .week-add-hint{opacity:1}
+.week-add-hint{font-size:10px;color:#ccc;opacity:0;transition:opacity 0.15s;margin-top:auto;padding-top:4px;text-align:center}
+.week-chip{font-size:11px;border-radius:5px;padding:4px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.4;max-width:100%;font-weight:600}
 
 /* RESIZE HANDLE */
 .cal-resize-wrapper{position:relative;padding-bottom:20px;margin:0 16px 16px}
@@ -297,13 +297,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
           <button id="cal-next-btn" onclick="calNext()">›</button>
         </div>
       </div>
-      <!-- Resize wrapper -->
+      <!-- Resize wrapper (monthly only) -->
       <div class="cal-resize-wrapper" id="cal-resize-wrapper">
         <div class="cal-grid" id="cal-grid"></div>
-        <!-- Week view grid (hidden by default) -->
-        <div id="week-grid" style="display:none" class="week-grid"></div>
         <div class="resize-hint">drag to resize</div>
         <div class="resize-handle" id="resize-handle" title="Drag to resize calendar"></div>
+      </div>
+      <!-- Week view (outside resize wrapper) -->
+      <div class="week-outer" id="week-outer">
+        <div class="week-col-header" id="week-col-header"></div>
+        <div class="week-body" id="week-body"></div>
       </div>
     </div>
 
@@ -852,19 +855,18 @@ function toggleCalView(){
 
 function renderCurrentCalView(){
   if(calViewMode === 'month'){
-    document.getElementById('cal-grid').style.display='';
-    document.getElementById('week-grid').style.display='none';
-    renderCurrentCalView();
+    document.getElementById('cal-resize-wrapper').style.display='';
+    document.getElementById('week-outer').style.display='none';
+    renderCalendar();
   } else {
-    document.getElementById('cal-grid').style.display='none';
-    document.getElementById('week-grid').style.display='';
+    document.getElementById('cal-resize-wrapper').style.display='none';
+    document.getElementById('week-outer').style.display='flex';
     renderWeek();
   }
 }
 
 // ── WEEK VIEW ─────────────────────────────────────────────────────────────────
 function getWeekStart(d){
-  // Sunday-anchored
   const s = new Date(d);
   s.setDate(s.getDate() - s.getDay());
   s.setHours(0,0,0,0);
@@ -874,74 +876,83 @@ function getWeekStart(d){
 function renderWeek(){
   const weekStart = getWeekStart(weekBaseDate);
   const weekEnd   = addDays(weekStart, 6);
+  const todayKey  = dateKey(TODAY);
 
-  // Update header label
-  const startLabel = MONTHS[weekStart.getMonth()].slice(0,3)+' '+weekStart.getDate();
-  const endLabel   = (weekEnd.getMonth()!==weekStart.getMonth()?MONTHS[weekEnd.getMonth()].slice(0,3)+' ':'')+weekEnd.getDate();
-  document.getElementById('cal-month-label').textContent =
-    MONTHS[weekStart.getMonth()]+(weekEnd.getMonth()!==weekStart.getMonth()?' – '+MONTHS[weekEnd.getMonth()]:'')
-    +' '+weekStart.getFullYear()+' · '+startLabel+' – '+endLabel;
+  // Header label
+  const sm = MONTHS[weekStart.getMonth()], em = MONTHS[weekEnd.getMonth()];
+  const sy = weekStart.getFullYear(), ey = weekEnd.getFullYear();
+  const rangeLabel = sm === em
+    ? sm + ' ' + weekStart.getDate() + ' – ' + weekEnd.getDate() + ', ' + sy
+    : sm + ' ' + weekStart.getDate() + ' – ' + em + ' ' + weekEnd.getDate() + ', ' + ey;
+  document.getElementById('cal-month-label').textContent = rangeLabel;
 
-  const grid = document.getElementById('week-grid');
-  grid.innerHTML='';
+  const days = [];
+  for(let i=0;i<7;i++) days.push(addDays(weekStart,i));
 
-  for(let i=0; i<7; i++){
-    const date = addDays(weekStart, i);
-    const dk   = dateKey(date);
-    const isToday = dk === dateKey(TODAY);
-
-    const row = document.createElement('div');
-    row.className = 'week-row' + (isToday?' week-row-today':'');
-
-    // Day label column
-    const dayLabel = document.createElement('div');
-    dayLabel.className = 'week-day-label';
-    const dowEl = document.createElement('div'); dowEl.className='week-dow'; dowEl.textContent=DAYS[date.getDay()];
-    const numEl = document.createElement('div'); numEl.className='week-date-num'; numEl.textContent=date.getDate();
-    dayLabel.appendChild(dowEl); dayLabel.appendChild(numEl);
-
-    // Content cell
+  // Column header row
+  const header = document.getElementById('week-col-header');
+  header.style.gridTemplateColumns = 'repeat(7,minmax(0,1fr))';
+  header.innerHTML = '';
+  days.forEach(date => {
+    const dk = dateKey(date);
+    const isToday = dk === todayKey;
     const cell = document.createElement('div');
-    cell.className = 'week-cell';
-    cell.onclick = () => openAssign(dk);
+    cell.className = 'week-col-header-cell';
+    const dow = document.createElement('div');
+    dow.className = 'week-col-dow' + (isToday ? ' today' : '');
+    dow.textContent = DAYS[date.getDay()];
+    const num = document.createElement('div');
+    num.className = 'week-col-datenum' + (isToday ? ' today' : '');
+    num.textContent = date.getDate();
+    cell.appendChild(dow);
+    cell.appendChild(num);
+    header.appendChild(cell);
+  });
+
+  // Body columns
+  const body = document.getElementById('week-body');
+  body.style.gridTemplateColumns = 'repeat(7,minmax(0,1fr))';
+  body.innerHTML = '';
+  days.forEach(date => {
+    const dk = dateKey(date);
+    const col = document.createElement('div');
+    col.className = 'week-body-col';
+    col.onclick = () => openAssign(dk);
 
     // Note chip
-    const note = dayNotes[dk]||'';
+    const note = dayNotes[dk] || '';
     if(note){
       const chip = document.createElement('div');
       const nl = note.toLowerCase();
       chip.className = 'week-chip ' + (nl.includes('hockey')?'chip-hockey':nl.includes('away')?'chip-away':'chip-note');
       chip.textContent = note;
-      cell.appendChild(chip);
+      col.appendChild(chip);
     }
 
     // Meal chips
-    (calEvents[dk]||[]).forEach(ev=>{
+    (calEvents[dk]||[]).forEach(ev => {
       const chip = document.createElement('div');
       chip.className = 'week-chip chip-meal';
       chip.textContent = ev.title;
-      cell.appendChild(chip);
+      col.appendChild(chip);
     });
 
     // Activity chips
-    (activities[dk]||[]).forEach(act=>{
+    (activities[dk]||[]).forEach(act => {
       const chip = document.createElement('div');
       const p = act.person.toLowerCase();
-      chip.className = 'week-chip chip-'+(['ron','angela','ellen','claire'].includes(p)?p:'note');
-      chip.textContent = act.person+': '+act.activity;
-      cell.appendChild(chip);
+      chip.className = 'week-chip chip-' + (['ron','angela','ellen','claire'].includes(p)?p:'note');
+      chip.textContent = act.person + ': ' + act.activity;
+      col.appendChild(chip);
     });
 
-    // Add hint
     const hint = document.createElement('div');
     hint.className = 'week-add-hint';
     hint.textContent = '+ add meal';
-    cell.appendChild(hint);
+    col.appendChild(hint);
 
-    row.appendChild(dayLabel);
-    row.appendChild(cell);
-    grid.appendChild(row);
-  }
+    body.appendChild(col);
+  });
 }
 
 // ── CALENDAR ──────────────────────────────────────────────────────────────────
