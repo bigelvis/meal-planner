@@ -61,6 +61,23 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .chip-away{background:#FFEBEE;color:#C62828}
 .chip-note{background:#E8F5E9;color:#2E7D32}
 
+/* WEEK VIEW */
+.week-header{display:flex;align-items:center;justify-content:space-between;padding:14px 16px}
+.week-label{font-size:17px;font-weight:700}
+.week-grid{margin:0 16px 16px;border:1px solid #e8e8e4;border-radius:12px;overflow:hidden}
+.week-row{display:grid;grid-template-columns:64px 1fr;border-bottom:1px solid #e8e8e4}
+.week-row:last-child{border-bottom:none}
+.week-row.week-row-today{background:#EEF6FF}
+.week-day-label{padding:10px 10px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:2px;background:#f5f5f0;border-right:1px solid #e8e8e4;min-height:70px}
+.week-dow{font-size:10px;font-weight:700;color:#888;letter-spacing:0.06em;text-transform:uppercase}
+.week-date-num{font-size:20px;font-weight:700;color:#1a1a1a;line-height:1}
+.week-row-today .week-date-num{color:#1a6bc4}
+.week-cell{padding:8px 10px;cursor:pointer;min-height:70px;display:flex;flex-direction:column;gap:3px;transition:background 0.1s}
+.week-cell:hover{background:#f9f9f7}
+.week-cell:hover .week-add-hint{opacity:1}
+.week-add-hint{font-size:10px;color:#bbb;opacity:0;transition:opacity 0.15s;margin-top:auto;padding-top:4px}
+.week-chip{font-size:11px;border-radius:5px;padding:3px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.5;max-width:100%}
+
 /* RESIZE HANDLE */
 .cal-resize-wrapper{position:relative;padding-bottom:20px;margin:0 16px 16px}
 .cal-resize-wrapper .cal-grid{margin:0}
@@ -274,14 +291,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
       <div class="cal-header">
         <span class="cal-month" id="cal-month-label"></span>
         <div class="cal-nav">
-          <button onclick="changeMonth(-1)">‹</button>
+          <button id="cal-prev-btn" onclick="calPrev()">‹</button>
           <button onclick="goToToday()">Today</button>
-          <button onclick="changeMonth(1)">›</button>
+          <button id="cal-view-toggle-btn" onclick="toggleCalView()" style="font-weight:600;background:#f0f0eb">Weekly</button>
+          <button id="cal-next-btn" onclick="calNext()">›</button>
         </div>
       </div>
       <!-- Resize wrapper -->
       <div class="cal-resize-wrapper" id="cal-resize-wrapper">
         <div class="cal-grid" id="cal-grid"></div>
+        <!-- Week view grid (hidden by default) -->
+        <div id="week-grid" style="display:none" class="week-grid"></div>
         <div class="resize-hint">drag to resize</div>
         <div class="resize-handle" id="resize-handle" title="Drag to resize calendar"></div>
       </div>
@@ -500,7 +520,6 @@ let currentScreen = 'calendar';
 let prevScreen    = 'calendar';
 let calYear       = TODAY.getFullYear();
 let calMonth      = TODAY.getMonth();
-let weekBaseDate  = new Date(TODAY);
 let editingMealId = null;
 let assigningDateKey = null;
 let activities    = {};
@@ -779,10 +798,13 @@ async function loadAll(){
   await Promise.all([loadMeals(), loadCalendarEvents(), loadActivities()]);
   setSyncStatus('synced');
   setTimeout(()=>setSyncStatus(''),3000);
-  renderCalendar();
+  renderCurrentCalView();
 }
 
 // ── NAV ───────────────────────────────────────────────────────────────────────
+let calViewMode = 'month'; // 'month' or 'week'
+let weekBaseDate = new Date(TODAY); // anchor for week view (any day in the week)
+
 function showScreen(s){
   prevScreen=currentScreen; currentScreen=s;
   document.querySelectorAll('.screen').forEach(el=>el.classList.remove('active'));
@@ -790,13 +812,137 @@ function showScreen(s){
   document.getElementById('back-btn').style.display=(s==='calendar')?'none':'';
   const titles={calendar:'Family Meal Planner',list:'Meal List'};
   document.getElementById('topbar-title').textContent=titles[s]||'Family Meal Planner';
-  if(s==='calendar')renderCalendar();
+  if(s==='calendar') renderCurrentCalView();
   else renderMealList();
 }
 
 function goBack(){ showScreen('calendar'); }
-function goToToday(){ calYear=TODAY.getFullYear(); calMonth=TODAY.getMonth(); loadCalendarEvents().then(renderCalendar); }
+
+function goToToday(){
+  calYear=TODAY.getFullYear(); calMonth=TODAY.getMonth();
+  weekBaseDate=new Date(TODAY);
+  loadCalendarEvents().then(renderCurrentCalView);
+}
+
+function calPrev(){
+  if(calViewMode==='month') changeMonth(-1);
+  else changeWeek(-1);
+}
+function calNext(){
+  if(calViewMode==='month') changeMonth(1);
+  else changeWeek(1);
+}
+
 function changeMonth(d){ calMonth+=d; if(calMonth>11){calMonth=0;calYear++;} if(calMonth<0){calMonth=11;calYear--;} loadCalendarEvents().then(renderCalendar); }
+
+function changeWeek(d){
+  weekBaseDate = addDays(weekBaseDate, d * 7);
+  // If we've drifted to a different month, sync calYear/calMonth
+  calYear = weekBaseDate.getFullYear();
+  calMonth = weekBaseDate.getMonth();
+  loadCalendarEvents().then(renderWeek);
+}
+
+function toggleCalView(){
+  calViewMode = calViewMode === 'month' ? 'week' : 'month';
+  const btn = document.getElementById('cal-view-toggle-btn');
+  btn.textContent = calViewMode === 'month' ? 'Weekly' : 'Monthly';
+  renderCurrentCalView();
+}
+
+function renderCurrentCalView(){
+  if(calViewMode === 'month'){
+    document.getElementById('cal-grid').style.display='';
+    document.getElementById('week-grid').style.display='none';
+    renderCurrentCalView();
+  } else {
+    document.getElementById('cal-grid').style.display='none';
+    document.getElementById('week-grid').style.display='';
+    renderWeek();
+  }
+}
+
+// ── WEEK VIEW ─────────────────────────────────────────────────────────────────
+function getWeekStart(d){
+  // Sunday-anchored
+  const s = new Date(d);
+  s.setDate(s.getDate() - s.getDay());
+  s.setHours(0,0,0,0);
+  return s;
+}
+
+function renderWeek(){
+  const weekStart = getWeekStart(weekBaseDate);
+  const weekEnd   = addDays(weekStart, 6);
+
+  // Update header label
+  const startLabel = MONTHS[weekStart.getMonth()].slice(0,3)+' '+weekStart.getDate();
+  const endLabel   = (weekEnd.getMonth()!==weekStart.getMonth()?MONTHS[weekEnd.getMonth()].slice(0,3)+' ':'')+weekEnd.getDate();
+  document.getElementById('cal-month-label').textContent =
+    MONTHS[weekStart.getMonth()]+(weekEnd.getMonth()!==weekStart.getMonth()?' – '+MONTHS[weekEnd.getMonth()]:'')
+    +' '+weekStart.getFullYear()+' · '+startLabel+' – '+endLabel;
+
+  const grid = document.getElementById('week-grid');
+  grid.innerHTML='';
+
+  for(let i=0; i<7; i++){
+    const date = addDays(weekStart, i);
+    const dk   = dateKey(date);
+    const isToday = dk === dateKey(TODAY);
+
+    const row = document.createElement('div');
+    row.className = 'week-row' + (isToday?' week-row-today':'');
+
+    // Day label column
+    const dayLabel = document.createElement('div');
+    dayLabel.className = 'week-day-label';
+    const dowEl = document.createElement('div'); dowEl.className='week-dow'; dowEl.textContent=DAYS[date.getDay()];
+    const numEl = document.createElement('div'); numEl.className='week-date-num'; numEl.textContent=date.getDate();
+    dayLabel.appendChild(dowEl); dayLabel.appendChild(numEl);
+
+    // Content cell
+    const cell = document.createElement('div');
+    cell.className = 'week-cell';
+    cell.onclick = () => openAssign(dk);
+
+    // Note chip
+    const note = dayNotes[dk]||'';
+    if(note){
+      const chip = document.createElement('div');
+      const nl = note.toLowerCase();
+      chip.className = 'week-chip ' + (nl.includes('hockey')?'chip-hockey':nl.includes('away')?'chip-away':'chip-note');
+      chip.textContent = note;
+      cell.appendChild(chip);
+    }
+
+    // Meal chips
+    (calEvents[dk]||[]).forEach(ev=>{
+      const chip = document.createElement('div');
+      chip.className = 'week-chip chip-meal';
+      chip.textContent = ev.title;
+      cell.appendChild(chip);
+    });
+
+    // Activity chips
+    (activities[dk]||[]).forEach(act=>{
+      const chip = document.createElement('div');
+      const p = act.person.toLowerCase();
+      chip.className = 'week-chip chip-'+(['ron','angela','ellen','claire'].includes(p)?p:'note');
+      chip.textContent = act.person+': '+act.activity;
+      cell.appendChild(chip);
+    });
+
+    // Add hint
+    const hint = document.createElement('div');
+    hint.className = 'week-add-hint';
+    hint.textContent = '+ add meal';
+    cell.appendChild(hint);
+
+    row.appendChild(dayLabel);
+    row.appendChild(cell);
+    grid.appendChild(row);
+  }
+}
 
 // ── CALENDAR ──────────────────────────────────────────────────────────────────
 function renderCalendar(){
@@ -968,7 +1114,7 @@ async function saveMeal(){
   await saveMealToSheets(m);
   closeDetail();
   if(currentScreen==='list')renderMealList();
-  if(currentScreen==='calendar')renderCalendar();
+  if(currentScreen==='calendar')renderCurrentCalView();
   showToast('✅ '+m.Name+' saved!');
 }
 
@@ -1013,7 +1159,7 @@ function openAssign(dk){
         if(!confirm('Remove "'+ev.title+'" from this day?'))return;
         closeSearch();
         await removeCalendarEvent(dk,ev.eventId);
-        renderCalendar();
+        renderCurrentCalView();
         showToast('Removed '+ev.title);
       };
       row.appendChild(name);row.appendChild(del);
@@ -1068,7 +1214,7 @@ async function assignMeal(id){
   m.LastMade=assigningDateKey;
   await addCalendarEvent(assigningDateKey, m.Name);
   await saveMealToSheets(m);
-  if(currentScreen==='calendar')renderCalendar();
+  if(currentScreen==='calendar')renderCurrentCalView();
 }
 
 function maybeCloseSearch(e){if(e.target===document.getElementById('search-overlay'))closeSearch();}
@@ -1090,7 +1236,7 @@ function saveNote(){
   else delete dayNotes[editingNoteKey];
   localStorage.setItem('mp_notes',JSON.stringify(dayNotes));
   closeNote();
-  if(currentScreen==='calendar')renderCalendar();
+  if(currentScreen==='calendar')renderCurrentCalView();
 }
 
 function closeNote(){document.getElementById('note-overlay').classList.remove('open');}
@@ -1190,7 +1336,7 @@ function renderActOverlay(){
       if(!confirm('Remove this activity?'))return;
       await deleteActivity(dk,act.rowIndex);
       renderActOverlay();
-      renderCalendar();
+      renderCurrentCalView();
     };
     row.appendChild(label);row.appendChild(del);
     existingDiv.appendChild(row);
@@ -1210,7 +1356,7 @@ function renderActOverlay(){
       btn.onclick=async()=>{
         await saveActivity(actDateKey,qa.person,qa.activity);
         renderActOverlay();
-        renderCalendar();
+        renderCurrentCalView();
       };
     }
     btns.appendChild(btn);
@@ -1224,7 +1370,7 @@ async function addCustomActivity(){
   await saveActivity(actDateKey,person,activity);
   document.getElementById('act-custom-input').value='';
   renderActOverlay();
-  renderCalendar();
+  renderCurrentCalView();
 }
 
 function closeAct(){document.getElementById('act-overlay').classList.remove('open');}
