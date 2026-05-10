@@ -7,7 +7,7 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f0;color:#1a1a1a;font-size:14px;min-height:100vh}
-.app{max-width:960px;margin:0 auto;background:#fff;min-height:100vh;box-shadow:0 0 0 1px rgba(0,0,0,0.08)}
+.app{max-width:var(--app-max-width,960px);margin:0 auto;background:#fff;min-height:100vh;box-shadow:0 0 0 1px rgba(0,0,0,0.08);transition:max-width 0.05s}
 
 /* AUTH */
 .auth-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:20px;padding:32px}
@@ -44,9 +44,9 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .cal-nav{display:flex;gap:6px}
 .cal-nav button{background:none;border:1px solid #ddd;border-radius:8px;padding:5px 12px;cursor:pointer;font-size:14px;color:#666}
 .cal-nav button:hover{background:#f5f5f0}
-.cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:1px;background:#e8e8e4;border:1px solid #e8e8e4;border-radius:12px;overflow:hidden;margin:0 16px 16px}
+.cal-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:1px;background:#e8e8e4;border:1px solid #e8e8e4;border-radius:12px;overflow:hidden;margin:0 16px 0}
 .cal-dow{background:#f5f5f0;text-align:center;padding:7px 0;font-size:11px;color:#888;font-weight:700;letter-spacing:0.04em}
-.cal-cell{background:#fff;padding:6px;min-height:80px;cursor:pointer;transition:background 0.1s;overflow:hidden}
+.cal-cell{background:#fff;padding:6px;min-height:var(--cell-min-height,80px);cursor:pointer;transition:background 0.1s;overflow:hidden}
 .cal-cell:hover{background:#f9f9f7}
 .cal-cell:hover .cal-add-btn{opacity:1}
 .cal-add-btn{opacity:0;font-size:10px;color:#1a6bc4;background:none;border:none;cursor:pointer;padding:0;transition:opacity 0.1s}
@@ -61,7 +61,39 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .chip-away{background:#FFEBEE;color:#C62828}
 .chip-note{background:#E8F5E9;color:#2E7D32}
 
-/* Week view removed — using Google Calendar instead */
+/* RESIZE HANDLE */
+.cal-resize-wrapper{position:relative;padding-bottom:20px;margin:0 16px 16px}
+.cal-resize-wrapper .cal-grid{margin:0}
+.resize-handle{
+  position:absolute;
+  bottom:0;right:0;
+  width:32px;height:20px;
+  cursor:ew-resize;
+  display:flex;align-items:center;justify-content:flex-end;
+  padding-right:4px;
+  user-select:none;
+}
+.resize-handle::before{
+  content:'';
+  display:block;
+  width:18px;height:6px;
+  border-right:3px solid #bbb;
+  border-bottom:3px solid #bbb;
+  border-radius:0 0 3px 0;
+  opacity:0.6;
+  transition:opacity 0.15s;
+}
+.resize-handle:hover::before{opacity:1;border-color:#666}
+.resize-hint{
+  position:absolute;
+  bottom:2px;right:36px;
+  font-size:10px;color:#bbb;
+  pointer-events:none;
+  user-select:none;
+  opacity:0;
+  transition:opacity 0.2s;
+}
+.cal-resize-wrapper:hover .resize-hint{opacity:1}
 
 /* MEAL LIST */
 .list-toolbar{padding:10px 16px;display:flex;gap:8px;align-items:center;border-bottom:1px solid #e8e8e4;flex-wrap:wrap;background:#fafafa;position:sticky;top:52px;z-index:50}
@@ -247,10 +279,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
           <button onclick="changeMonth(1)">›</button>
         </div>
       </div>
-      <div class="cal-grid" id="cal-grid"></div>
+      <!-- Resize wrapper -->
+      <div class="cal-resize-wrapper" id="cal-resize-wrapper">
+        <div class="cal-grid" id="cal-grid"></div>
+        <div class="resize-hint">drag to resize</div>
+        <div class="resize-handle" id="resize-handle" title="Drag to resize calendar"></div>
+      </div>
     </div>
-
-  
 
     <div class="screen" id="screen-list">
       <div class="list-toolbar">
@@ -459,7 +494,7 @@ const MONTHS = ['January','February','March','April','May','June','July','August
 let accessToken   = null;
 let userProfile   = null;
 let meals         = [];
-let calEvents     = {};  // dateKey -> [{id, title, eventId}]
+let calEvents     = {};
 let dayNotes      = JSON.parse(localStorage.getItem('mp_notes')||'{}');
 let currentScreen = 'calendar';
 let prevScreen    = 'calendar';
@@ -468,9 +503,66 @@ let calMonth      = TODAY.getMonth();
 let weekBaseDate  = new Date(TODAY);
 let editingMealId = null;
 let assigningDateKey = null;
-let activities    = {};  // dateKey -> [{rowIndex, person, activity, note}]
+let activities    = {};
 let editingNoteKey   = null;
 let currentRatings   = {rR:'',rA:'',rE:'',rC:''};
+
+// ── CALENDAR RESIZE ───────────────────────────────────────────────────────────
+(function initResize(){
+  // Restore saved width
+  const savedWidth = localStorage.getItem('mp_cal_width');
+  if(savedWidth) document.documentElement.style.setProperty('--app-max-width', savedWidth+'px');
+
+  const savedCellH = localStorage.getItem('mp_cell_height');
+  if(savedCellH) document.documentElement.style.setProperty('--cell-min-height', savedCellH+'px');
+
+  let isResizing = false;
+  let startX = 0;
+  let startWidth = 0;
+
+  document.addEventListener('mousedown', e => {
+    const handle = document.getElementById('resize-handle');
+    if(!handle || e.target !== handle) return;
+    e.preventDefault();
+    isResizing = true;
+    startX = e.clientX;
+    startWidth = document.querySelector('.app').offsetWidth;
+    document.body.style.cursor = 'ew-resize';
+    document.body.style.userSelect = 'none';
+  });
+
+  document.addEventListener('mousemove', e => {
+    if(!isResizing) return;
+    const dx = e.clientX - startX;
+    const newWidth = Math.max(700, Math.min(1800, startWidth + dx * 2)); // *2 since centered
+    document.documentElement.style.setProperty('--app-max-width', newWidth+'px');
+    // Scale cell height proportionally: base 80px at 960px width
+    const cellH = Math.max(70, Math.round(80 * newWidth / 960));
+    document.documentElement.style.setProperty('--cell-min-height', cellH+'px');
+  });
+
+  document.addEventListener('mouseup', e => {
+    if(!isResizing) return;
+    isResizing = false;
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+    // Save preferences
+    const w = document.querySelector('.app').offsetWidth;
+    localStorage.setItem('mp_cal_width', w);
+    const cellH = Math.max(70, Math.round(80 * w / 960));
+    localStorage.setItem('mp_cell_height', cellH);
+  });
+
+  // Double-click handle to reset
+  document.addEventListener('dblclick', e => {
+    const handle = document.getElementById('resize-handle');
+    if(!handle || e.target !== handle) return;
+    document.documentElement.style.setProperty('--app-max-width', '960px');
+    document.documentElement.style.setProperty('--cell-min-height', '80px');
+    localStorage.removeItem('mp_cal_width');
+    localStorage.removeItem('mp_cell_height');
+  });
+})();
 
 // ── UTILS ─────────────────────────────────────────────────────────────────────
 function dateKey(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
@@ -527,7 +619,6 @@ function initAuth(){
         return;
       }
       accessToken = resp.access_token;
-      // Store hint for silent refresh
       localStorage.setItem('mp_signed_in','1');
       await fetchUserProfile();
       document.getElementById('auth-screen').style.display='none';
@@ -535,7 +626,6 @@ function initAuth(){
       await loadAll();
     }
   });
-  // Try silent sign-in if previously signed in
   if(localStorage.getItem('mp_signed_in')==='1'){
     tokenClient.requestAccessToken({prompt:''});
   }
@@ -603,9 +693,7 @@ async function loadMeals(){
 }
 
 async function seedMeals(){
-  // Write header
   await sheetsUpdate(`${CONFIG.SHEET_NAME}!A1:J1`,[SHEET_COLS]);
-  // Write all default meals
   const rows = DEFAULT_MEALS.map(m=>SHEET_COLS.map(c=>m[c]||''));
   const url=`https://sheets.googleapis.com/v4/spreadsheets/${CONFIG.SHEET_ID}/values/${CONFIG.SHEET_NAME}!A2:J${rows.length+1}?valueInputOption=RAW`;
   await fetch(url,{method:'PUT',headers:{Authorization:'Bearer '+accessToken,'Content-Type':'application/json'},body:JSON.stringify({values:rows})});
@@ -632,7 +720,6 @@ async function deleteMealFromSheets(m){
   if(!m._row)return;
   setSyncStatus('syncing');
   try{
-    // Clear the row
     await sheetsUpdate(`${CONFIG.SHEET_NAME}!A${m._row}:J${m._row}`,[['','','','','','','','','','']]);
     setSyncStatus('synced');
     setTimeout(()=>setSyncStatus(''),3000);
@@ -730,7 +817,6 @@ function makeCalCell(date,other){
   const cell=document.createElement('div');
   cell.className='cal-cell'+(other?' other-month':'')+(isToday?' today':'');
 
-  // Header row: date number + activity button
   const headerRow=document.createElement('div');
   headerRow.style.cssText='display:flex;align-items:center;justify-content:space-between;margin-bottom:3px';
   const dateDiv=document.createElement('div');
@@ -741,7 +827,6 @@ function makeCalCell(date,other){
   headerRow.appendChild(dateDiv);headerRow.appendChild(actBtn);
   cell.appendChild(headerRow);
 
-  // Day note chip
   const note=dayNotes[dk]||'';
   if(note){
     const chip=document.createElement('div');
@@ -750,12 +835,10 @@ function makeCalCell(date,other){
     chip.textContent=note;cell.appendChild(chip);
   }
 
-  // Meal chips
   (calEvents[dk]||[]).forEach(ev=>{
     const chip=document.createElement('div');chip.className='cal-chip chip-meal';chip.textContent=ev.title;cell.appendChild(chip);
   });
 
-  // Activity chips
   (activities[dk]||[]).forEach(act=>{
     const chip=document.createElement('div');
     const p=act.person.toLowerCase();
@@ -768,7 +851,6 @@ function makeCalCell(date,other){
   return cell;
 }
 
-// ── MEAL LIST (Week view removed — using Google Calendar) ──────────────────────────────────────────────
 // ── MEAL LIST ─────────────────────────────────────────────────────────────────
 function renderMealList(){
   const q=(document.getElementById('list-search').value||'').toLowerCase().trim();
@@ -853,8 +935,6 @@ function updateNextAvail(){
 }
 
 function renderStars(person,val){
-  const key='r'+person.slice(-1);
-  const ratingKey='Rating_'+person.slice(-1).toUpperCase();
   const c=document.getElementById('stars-'+person);
   const v=parseInt(val)||0;
   c.innerHTML='';
@@ -888,7 +968,6 @@ async function saveMeal(){
   await saveMealToSheets(m);
   closeDetail();
   if(currentScreen==='list')renderMealList();
-  if(currentScreen==='week')renderWeek();
   if(currentScreen==='calendar')renderCalendar();
   showToast('✅ '+m.Name+' saved!');
 }
@@ -912,7 +991,6 @@ function openAssign(dk){
   assigningDateKey=dk;
   document.getElementById('search-input').value='';
 
-  // Show existing meals for this date with remove option
   const existing=calEvents[dk]||[];
   const existingDiv=document.getElementById('search-existing');
   if(existing.length){
@@ -990,7 +1068,6 @@ async function assignMeal(id){
   m.LastMade=assigningDateKey;
   await addCalendarEvent(assigningDateKey, m.Name);
   await saveMealToSheets(m);
-  if(currentScreen==='week')renderWeek();
   if(currentScreen==='calendar')renderCalendar();
 }
 
@@ -1013,7 +1090,6 @@ function saveNote(){
   else delete dayNotes[editingNoteKey];
   localStorage.setItem('mp_notes',JSON.stringify(dayNotes));
   closeNote();
-  if(currentScreen==='week')renderWeek();
   if(currentScreen==='calendar')renderCalendar();
 }
 
@@ -1173,7 +1249,7 @@ const DEFAULT_MEALS = [
   {Name:'Lentil soup',Source:'',Tags:'vegetarian, soup, quick',Cooldown:'30',Rating_R:'',Rating_A:'4',Rating_E:'',Rating_C:'',Notes:'',LastMade:'2026-04-09'},
   {Name:'Pasta bolognese',Source:'BB',Tags:'pasta, beef, angela only, all day cook, weekend',Cooldown:'60',Rating_R:'5',Rating_A:'5',Rating_E:'4',Rating_C:'5',Notes:'All day cook — Angela only',LastMade:''},
   {Name:'Slow cooker Indian butter chicken',Source:'dinnerthendessert.com',Tags:'chicken, crockpot, ron cooks, mild, hockey',Cooldown:'45',Rating_R:'5',Rating_A:'4',Rating_E:'4',Rating_C:'4',Notes:'Ron can make this',LastMade:'2026-01-28'},
-  {Name:'Pork tenderloin + potatoes',Source:'',Tags:'pork, ron in town, meat and potatoes',Cooldown:'30',Rating_R:'5',Rating_A:'3',Rating_E:'3',Rating_C:'',Notes:'Best when Ron is in town. Not Ellen\'s favorite.',LastMade:'2026-02-17'},
+  {Name:'Pork tenderloin + potatoes',Source:'',Tags:'pork, ron in town, meat and potatoes',Cooldown:'30',Rating_R:'5',Rating_A:'3',Rating_E:'3',Rating_C:'',Notes:'Best when Ron is in town.',LastMade:'2026-02-17'},
   {Name:'Chicken noodle soup',Source:'D:ALS p.290',Tags:'chicken, soup, comfort, mild',Cooldown:'30',Rating_R:'4',Rating_A:'4',Rating_E:'4',Rating_C:'4',Notes:'',LastMade:'2026-01-21'},
   {Name:'Steak + baked potatoes',Source:'',Tags:'beef, special occasion, ron in town, meat and potatoes',Cooldown:'60',Rating_R:'5',Rating_A:'4',Rating_E:'4',Rating_C:'',Notes:'Special occasion meal',LastMade:'2026-03-08'},
   {Name:'Chicken + gravy',Source:'CL 1-2/21 pp.10-11',Tags:'chicken, comfort, mild',Cooldown:'30',Rating_R:'4',Rating_A:'4',Rating_E:'4',Rating_C:'',Notes:'',LastMade:'2026-04-19'},
@@ -1188,12 +1264,8 @@ const DEFAULT_MEALS = [
   {Name:'Chicken pizzas',Source:'BB',Tags:'pizza, chicken, quick, easy, hockey, mild',Cooldown:'21',Rating_R:'4',Rating_A:'3',Rating_E:'5',Rating_C:'4',Notes:'Good hockey night option',LastMade:'2026-04-30'},
   {Name:'Beef stroganoff',Source:'FN 4/21 p.54',Tags:'beef, crockpot, comfort',Cooldown:'60',Rating_R:'5',Rating_A:'4',Rating_E:'4',Rating_C:'',Notes:'Slow cooker version — Ron can make',LastMade:'2024-08-13'},
   {Name:'Baked potato soup',Source:'BB',Tags:'soup, vegetarian, comfort',Cooldown:'30',Rating_R:'4',Rating_A:'4',Rating_E:'4',Rating_C:'4',Notes:'',LastMade:'2026-03-17'},
-  {Name:'Chicken + sausage gumbo',Source:'BB',Tags:'chicken, sausage, weekend, involved',Cooldown:'60',Rating_R:'4',Rating_A:'5',Rating_E:'3',Rating_C:'',Notes:'',LastMade:'2026-03-04'},
 ];
-</script>
-</body>
-</html>
-<script>
+
 // ── SETTINGS ──────────────────────────────────────────────────────────────────
 function openSettings(){
   document.getElementById('settings-apikey').value=localStorage.getItem('mp_apikey')||'';
@@ -1306,7 +1378,6 @@ For internet recipes, url must be a real working URL and rating_note should be l
       if(block.type==='text') text+=block.text;
     }
 
-    // Strip markdown fences if present
     const clean=text.replace(/```json\s*|```\s*/g,'').trim();
     const jsonMatch=clean.match(/\{[\s\S]*"suggestions"[\s\S]*\}/);
     if(!jsonMatch) throw new Error('Unexpected response — try again');
@@ -1347,15 +1418,11 @@ function renderSuggestions(suggestions, query){
     const isOwn=s.source_type==='own_list';
     const card=document.createElement('div');
     card.className='suggest-card';
-
     const srcColor=isOwn?'#1a5c2e':'#1a4bc4';
-    const srcBg=isOwn?'#E8F5E2':'#EEF3FF';
     const srcLabel=isOwn?('📗 '+s.source):'🌐 Internet';
-
     let metaHTML='';
     if(s.rating_note) metaHTML+=`<span class="suggest-card-badge" style="background:#FFF8E1;color:#F57F17">⭐ ${s.rating_note}</span>`;
     if(s.url) metaHTML+=`<a class="suggest-card-link" href="${s.url}" target="_blank">View recipe →</a>`;
-
     card.innerHTML=`
       <div class="suggest-card-source" style="color:${srcColor}">${srcLabel}</div>
       <div class="suggest-card-name">${i+1}. ${s.name}</div>
@@ -1368,3 +1435,5 @@ function renderSuggestions(suggestions, query){
   document.getElementById('suggest-results').style.display='block';
 }
 </script>
+</body>
+</html>
